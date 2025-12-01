@@ -10,7 +10,7 @@
 <body>
   <header class="topbar">
     <h1>Dashboard • Inteligência Emocional</h1>
-    <p class="subtitle">Use os filtros e clique em "Atualizar agora" para carregar os dados.</p>
+    <p class="subtitle">Use os filtros e clique em "Gerar Insights IA" para atualizar o resumo.</p>
   </header>
 
   <main class="container">
@@ -42,6 +42,9 @@
         <h3>Recomendação (NPS)</h3>
         <div class="metric" id="metric-nps-rec">—</div>
         <div class="help">NPS = %Promotores − %Detratores</div>
+        <div class="help small" id="nps-breakdown">
+          %Detratores: <span id="nps-pct-detr">—</span> &nbsp; | &nbsp; %Promotores: <span id="nps-pct-prom">—</span>
+        </div>
       </div>
 
       <div class="card nps-card">
@@ -64,20 +67,28 @@
     </section>
 
     <section class="charts">
-      <div class="chart-card wide">
-        <h4>Comparação (Quantidade de respostas por pergunta)</h4>
-        <canvas id="chart-compare"></canvas>
-        <div class="legend-inline" id="legend-compare"></div>
+      <div class="chart-card">
+        <h4>Comparação — Check-in (Quantidade por categoria)</h4>
+        <canvas id="chart-checkin"></canvas>
+        <div class="legend-inline" id="legend-checkin"></div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Comparação — Check-out (Quantidade por categoria)</h4>
+        <canvas id="chart-checkout"></canvas>
+        <div class="legend-inline" id="legend-checkout"></div>
       </div>
 
       <div class="chart-card wide">
         <h4>Resumo das respostas abertas (IA)</h4>
-        <div id="ai-summary" class="ai-box">Clique em "Gerar Insights IA" para obter o resumo.</div>
+        <div id="ai-summary" class="ai-box">
+          <div id="insightBox">Clique em "Gerar Insights IA" para obter o resumo.</div>
+        </div>
       </div>
     </section>
 
     <footer class="footer">
-      <small>Marusa Nogueira</small>
+      <small>PROJETO DE MARUSA NOGUEIRA</small>
     </footer>
   </main>
 
