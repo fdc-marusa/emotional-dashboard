@@ -1,209 +1,42 @@
-/* ===========================
-   RESET / BASE
-============================== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
+:root{
+  --roxo: #65266D;
+  --laranja: #FF834F;
+  --branco: #FFFFFF;
+  --cinza: #f3f3f6;
+  --text: #222;
 }
+*{box-sizing:border-box}
+body{font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--cinza); color:var(--text);}
 
-body {
-  background: #f4f4f8;
-  color: #333;
-  padding: 0;
-  margin: 0;
-}
+.topbar{background:var(--roxo); color:var(--branco); padding:18px 20px}
+.topbar h1{margin:0;font-size:20px}
+.topbar .subtitle{margin:4px 0 0; opacity:0.9; font-size:13px}
 
-/* ===========================
-   HEADER
-============================== */
-.topbar {
-  background: #65266D;
-  color: #fff;
-  padding: 18px 24px;
-  text-align: center;
-}
+.container{max-width:1200px;margin:18px auto;padding:12px}
 
-.topbar h1 {
-  font-size: 26px;
-  font-weight: 600;
-}
+.controls{display:flex;gap:12px;align-items:end;margin-bottom:14px;flex-wrap:wrap}
+.filter{display:flex;flex-direction:column}
+.filter label{font-weight:600;font-size:13px;margin-bottom:6px}
+.filter select{padding:8px 10px;border-radius:6px;border:1px solid #ddd;min-width:160px}
+.actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.actions button{background:var(--roxo);color:var(--branco);border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+.actions button#btn-insights{background:var(--laranja); color:#fff}
+.last-update{font-size:12px;color:#666;margin-left:8px}
 
-.topbar .subtitle {
-  font-size: 15px;
-  margin-top: 6px;
-  opacity: 0.85;
-}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 6px 14px rgba(0,0,0,0.04)}
+.card h3{margin:0 0 6px;font-size:14px}
+.metric{font-size:24px;font-weight:700;color:var(--roxo)}
 
-/* ===========================
-   CONTAINER
-============================== */
-.container {
-  padding: 20px 26px;
-  max-width: 1200px;
-  margin: auto;
-}
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.chart-card{background:#fff;padding:12px;border-radius:10px;box-shadow:0 6px 14px rgba(0,0,0,0.04)}
+.chart-card.wide{grid-column:1 / -1}
 
-/* ===========================
-   FILTER CONTROLS
-============================== */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  align-items: center;
-  margin-bottom: 20px;
-}
+.ai-box{padding:10px;background:#fafafa;border-radius:6px;min-height:80px}
 
-.filter {
-  display: flex;
-  flex-direction: column;
-}
-
-.filter label {
-  font-size: 14px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.filter select {
-  padding: 7px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background: white;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.actions button {
-  background: #65266D;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  transition: 0.2s;
-}
-
-.actions button:hover {
-  background: #7b2f86;
-}
-
-.last-update {
-  font-size: 13px;
-  opacity: 0.7;
-}
-
-/* ===========================
-   METRICS GRID
-============================== */
-.grid-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.card {
-  background: white;
-  padding: 18px;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-}
-
-.card h3 {
-  font-size: 15px;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.metric {
-  font-size: 32px;
-  font-weight: bold;
-  color: #65266D;
-  margin-top: 6px;
-}
-
-/* ===========================
-   CHARTS
-============================== */
-.charts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 22px;
-}
-
-.chart-card {
-  background: white;
-  padding: 18px;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  min-height: 320px;
-  display: flex;
-  flex-direction: column;
-}
-
-.chart-card h4 {
-  margin-bottom: 12px;
-  font-size: 15px;
-  font-weight: bold;
-}
-
-.chart-card canvas {
-  width: 100% !important;
-  height: auto !important;
-  flex: 1;
-}
-
-.chart-card.wide {
-  grid-column: 1 / -1;
-}
-
-/* ===========================
-   AI SUMMARY BOX
-============================== */
-.ai-box {
-  background: #fafafa;
-  padding: 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  min-height: 160px;
-  border: 1px solid #e3e3e3;
-  white-space: normal;
-  line-height: 1.5;
-}
-
-/* ===========================
-   FOOTER
-============================== */
-.footer {
-  text-align: center;
-  margin-top: 40px;
-  padding-bottom: 15px;
-  font-size: 13px;
-  opacity: 0.6;
-}
-
-/* ===========================
-   RESPONSIVE
-============================== */
-@media (max-width: 600px) {
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .actions {
-    justify-content: space-between;
-  }
-
-  .charts {
-    grid-template-columns: 1fr;
-  }
+.footer{margin-top:16px;text-align:center;color:#666;font-size:12px}
+@media(max-width:900px){
+  .charts{grid-template-columns:1fr}
+  .grid-3{grid-template-columns:1fr}
+  .controls{flex-direction:column;align-items:flex-start}
 }
