@@ -10,13 +10,12 @@
 <body>
   <header class="topbar">
     <h1>Dashboard • Inteligência Emocional</h1>
-    <p class="subtitle">Use os filtros e clique em "Gerar Insights IA" para atualizar o resumo.</p>
+    <p class="subtitle">Filtros + atualização automática (45s). Insight IA só altera quando você clicar em "Gerar Insights IA".</p>
   </header>
 
-  <!-- DIAGNÓSTICO RÁPIDO -->
   <div id="diag" class="diag">
     <strong>Diagnóstico:</strong> <span id="diag-msg">Inicializando...</span>
-    <button id="diag-show-json" class="mini">Mostrar JSON</button>
+    <button id="diag-show-json" class="mini">Mostrar JSON (fallback)</button>
   </div>
 
   <main class="container">
@@ -74,15 +73,20 @@
 
     <section class="charts">
       <div class="chart-card">
-        <h4>Comparação — Check-in (Quantidade por categoria)</h4>
-        <canvas id="chart-checkin" height="220"></canvas>
+        <h4>Comparação — Check-in</h4>
+        <canvas id="chart-checkin" height="250"></canvas>
         <div class="legend-inline" id="legend-checkin"></div>
       </div>
 
       <div class="chart-card">
-        <h4>Comparação — Check-out (Quantidade por categoria)</h4>
-        <canvas id="chart-checkout" height="220"></canvas>
+        <h4>Comparação — Check-out</h4>
+        <canvas id="chart-checkout" height="250"></canvas>
         <div class="legend-inline" id="legend-checkout"></div>
+      </div>
+
+      <div class="chart-card wide">
+        <h4>Tabela comparativa (percentual por pergunta)</h4>
+        <div id="comparison-table" class="table-wrap"></div>
       </div>
 
       <div class="chart-card wide">
@@ -98,93 +102,9 @@
     </footer>
   </main>
 
-  <!-- ======================================================================
-       FALLBACK SAMPLE JSON (USADO SOMENTE SE O FETCH FALHAR)
-       ======================================================================
-       Substituí aqui com o JSON que você forneceu para que você veja o dashboard
-       trabalhando mesmo quando o Apps Script bloquear CORS.
-    -->
+  <!-- fallback sample JSON (opcional) - remova em produção -->
   <script>
-  window.SAMPLE_JSON = {
-  "raw": {
-    "checkin": [
-      {
-        "Timestamp": "2025-08-01T03:00:00.000Z",
-        "Score": 0,
-        "Nome completo": "Aluno 1",
-        "Turma": "Turma 50",
-        "Eixo": "Eixo 1",
-        "Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?": "🙂Quase sempre, reconheço situações que me desestabilizam, mas posso melhorar o autocontrole.",
-        "Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?": "😀Sim, é “de boa” nomear as emoções que estou sentido.",
-        "Você consegue reconhecer características de um comportamento autoconfiante?": "😀 Sim, consigo! Consigo descrever políticas de diversidade e inclusão, bem como sua importância.",
-        "Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?": "🙂 Relaciono bem com as pessoas, mas trabalhar em equipe ainda é um desafio."
-      },
-      {
-        "Timestamp": "2025-08-01T03:00:00.000Z",
-        "Score": 0,
-        "Nome completo": "Aluno 2",
-        "Turma": "Turma 50",
-        "Eixo": "Eixo 1",
-        "Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?": "😬Mais ou menos, reconheço situações que me desestabilizam, mas tenho dificuldade em manter o autocontrole.",
-        "Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?": "🙂Quase sempre, acho que consigo nomear a maioria das minhas emoções.",
-        "Você consegue reconhecer características de um comportamento autoconfiante?": "🙂Reconheço algumas características de um comportamento autoconfiante.",
-        "Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?": "😀Muito bom! Creio me relacionar bem com as pessoas e trabalho bem em equipe."
-      }
-    ],
-    "checkout": [
-      {
-        "Timestamp": "2025-08-01T03:00:00.000Z",
-        "Score": 0,
-        "Nome completo": "Aluno 1",
-        "Turma": "Turma 50",
-        "Eixo": "Eixo 1",
-        "Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?": "😞Não consigo, é difícil reconhecer situações que me desestabilizam.",
-        "Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?": "😀Sim, é “de boa” nomear as emoções que estou sentido.",
-        "Você consegue reconhecer características de um comportamento autoconfiante?": "😀 Sim, consigo! Consigo descrever políticas de diversidade e inclusão, bem como sua importância.",
-        "Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?": "🙂 Relaciono bem com as pessoas, mas trabalhar em equipe ainda é um desafio."
-      },
-      {
-        "Timestamp": "2025-08-01T03:00:00.000Z",
-        "Score": 0,
-        "Nome completo": "Aluno 2",
-        "Turma": "Turma 50",
-        "Eixo": "Eixo 1",
-        "Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?": "😀Consigo! Reconheço as situações que me desestabilizam e respondo bem as que exigem bastante autocontrole.",
-        "Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?": "🙂Quase sempre, acho que consigo nomear a maioria das minhas emoções.",
-        "Você consegue reconhecer características de um comportamento autoconfiante?": "🙂Reconheço algumas características de um comportamento autoconfiante.",
-        "Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?": "😀Muito bom! Creio me relacionar bem com as pessoas e trabalho bem em equipe."
-      }
-    ],
-    "avaliacao": [
-      {
-        "Carimbo de data/hora": "2025-08-09T17:44:54.000Z",
-        "Nome completo": "Aluno 1",
-        "Turma": "Turma 50",
-        "Eixo": "Eixo 1",
-        "Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?": 8,
-        "Em uma escala de 1 a 5, como você se autoavalia em relação ao seu desempenho nas aulas deste módulo?": 5,
-        "Em uma escala de 1 a 5, como você avalia o professor 1 na condução das aulas deste módulo?": 5,
-        "Em uma escala de 1 a 5, como você avalia o professor 2 na condução das aulas deste módulo?": 5,
-        "Que bom (O que você gostou)": "Gostei da forma que nos foi apresentado cada assunto sobre inteligência emocional",
-        "Que tal (O que poderia ser melhor)": "Poderia acrescentar situações mais profundas sobre as emoções e sentimentos, algo que faria às pessoas repensarem e mudarem de ponto de vista, poderia ser melhor, mas foi ótimo mesmo assim",
-        "Que pena (O que você não gostou)": "Eu n tenho oq reclamar, foi tudo bem feito, mas como eu disse, poderia ser melhor"
-      },
-      {
-        "Carimbo de data/hora": "2025-08-09T17:44:54.000Z",
-        "Nome completo": "Aluno 2",
-        "Turma": "Turma 50",
-        "Eixo": "Eixo 1",
-        "Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?": 1,
-        "Em uma escala de 1 a 5, como você se autoavalia em relação ao seu desempenho nas aulas deste módulo?": 4,
-        "Em uma escala de 1 a 5, como você avalia o professor 1 na condução das aulas deste módulo?": 5,
-        "Em uma escala de 1 a 5, como você avalia o professor 2 na condução das aulas deste módulo?": 5,
-        "Que bom (O que você gostou)": "A forma que as aulas são explicadas, de uma forma fácil de entender, descontraída, e muito interessante",
-        "Que tal (O que poderia ser melhor)": "Mais dias de aula desse tema para que possamos aprender ainda mais sobre as emoções",
-        "Que pena (O que você não gostou)": "Nada"
-      }
-    ]
-  }
-};
+  window.SAMPLE_JSON = {"raw":{"checkin":[{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 1","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"🙂Quase sempre, reconheço situações que me desestabilizam, mas posso melhorar o autocontrole.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"😀Sim, é “de boa” nomear as emoções que estou sentido.","Você consegue reconhecer características de um comportamento autoconfiante?":"😀 Sim, consigo! Consigo descrever políticas de diversidade e inclusão, bem como sua importância.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"🙂 Relaciono bem com as pessoas, mas trabalhar em equipe ainda é um desafio."},{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 2","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"😬Mais ou menos, reconheço situações que me desestabilizam, mas tenho dificuldade em manter o autocontrole.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"🙂Quase sempre, acho que consigo nomear a maioria das minhas emoções.","Você consegue reconhecer características de um comportamento autoconfiante?":"🙂Reconheço algumas características de um comportamento autoconfiante.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"😀Muito bom! Creio me relacionar bem com as pessoas e trabalho bem em equipe."}],"checkout":[{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 1","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"😞Não consigo, é difícil reconhecer situações que me desestabilizam.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"😀Sim, é “de boa” nomear as emoções que estou sentido.","Você consegue reconhecer características de um comportamento autoconfiante?":"😀 Sim, consigo! Consigo descrever políticas de diversidade e inclusão, bem como sua importância.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"🙂 Relaciono bem com as pessoas, mas trabalhar em equipe ainda é um desafio."},{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 2","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"😀Consigo! Reconheço as situações que me desestabilizam e respondo bem as que exigem bastante autocontrole.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"🙂Quase sempre, acho que consigo nomear a maioria das minhas emoções.","Você consegue reconhecer características de um comportamento autoconfiante?":"🙂Reconheço algumas características de um comportamento autoconfiante.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"😀Muito bom! Creio me relacionar bem com as pessoas e trabalho bem em equipe."}],"avaliacao":[{"Carimbo de data/hora":"2025-08-09T17:44:54.000Z","Nome completo":"Aluno 1","Turma":"Turma 50","Eixo":"Eixo 1","Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?":8,"Em uma escala de 1 a 5, como você se autoavalia em relação ao seu desempenho nas aulas deste módulo?":5,"Em uma escala de 1 a 5, como você avalia o professor 1 na condução das aulas deste módulo?":5,"Em uma escala de 1 a 5, como você avalia o professor 2 na condução das aulas deste módulo?":5,"Que bom (O que você gostou)":"Gostei da forma que nos foi apresentado cada assunto sobre inteligência emocional","Que tal (O que poderia ser melhor)":"Poderia acrescentar situações mais profundas sobre as emoções e sentimentos","Que pena (O que você não gostou)":"Eu n tenho oq reclamar"},{"Carimbo de data/hora":"2025-08-09T17:44:54.000Z","Nome completo":"Aluno 2","Turma":"Turma 50","Eixo":"Eixo 1","Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?":1,"Em uma escala de 1 a 5, como você se autoavalia em relação ao seu desempenho nas aulas deste módulo?":4,"Em uma escala de 1 a 5, como você avalia o professor 1 na condução das aulas deste módulo?":5,"Em uma escala de 1 a 5, como você avalia o professor 2 na condução das aulas deste módulo?":5,"Que bom (O que você gostou)":"A forma que as aulas são explicadas","Que tal (O que poderia ser melhor)":"Mais dias de aula desse tema","Que pena (O que você não gostou)":"Nada"}]}}
   </script>
 
   <script src="script.js"></script>
