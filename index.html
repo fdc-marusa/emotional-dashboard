@@ -10,7 +10,7 @@
 <body>
   <header class="topbar">
     <h1>Dashboard • Inteligência Emocional</h1>
-    <p class="subtitle">Filtros atualizam gráficos e médias — use os selects abaixo</p>
+    <p class="subtitle">Filtros atualizam gráficos e métricas — use os selects abaixo</p>
   </header>
 
   <main class="container">
@@ -40,32 +40,36 @@
     <!-- NPS / Médias -->
     <section class="grid-metrics" id="nps-grid">
       <div class="card nps-card">
-        <h3>Recomendação (0–10)</h3>
+        <h3>Recomendação (NPS)</h3>
         <div class="metric" id="metric-nps-rec">—</div>
-        <div class="help">Em uma escala de 0 a 10 o quanto você recomendaria o eixo?</div>
+        <div class="help">NPS = %Promotores − %Detratores (0–100)</div>
       </div>
 
       <div class="card nps-card">
         <h3>Autoavaliação (1–5)</h3>
         <div class="metric" id="metric-nps-auto">—</div>
-        <div class="help">Como você se autoavalia nas aulas deste módulo?</div>
+        <div class="help">Média da autoavaliação (esc. 1–5)</div>
       </div>
 
       <div class="card nps-card">
-        <h3>Avaliação do professor (1–5)</h3>
-        <div class="metric" id="metric-nps-prof">—</div>
-        <div class="help">Como você avalia o professor Fernando Oliveira?</div>
+        <h3>Avaliação professor 1 (1–5)</h3>
+        <div class="metric" id="metric-nps-prof1">—</div>
+        <div class="help">Média professor 1</div>
+      </div>
+
+      <div class="card nps-card">
+        <h3>Avaliação professor 2 (1–5)</h3>
+        <div class="metric" id="metric-nps-prof2">—</div>
+        <div class="help">Média professor 2</div>
       </div>
     </section>
 
-    <!-- Gráfico único: Comparação (contagens por resposta) -->
+    <!-- Gráfico único: Comparação (contagens por categoria) -->
     <section class="charts">
       <div class="chart-card wide">
         <h4>Comparação (Quantidade de respostas por pergunta)</h4>
         <canvas id="chart-compare"></canvas>
-        <div class="legend-inline" id="legend-compare">
-          <!-- legenda gerada pelo JS -->
-        </div>
+        <div class="legend-inline" id="legend-compare"></div>
       </div>
 
       <div class="chart-card wide">
