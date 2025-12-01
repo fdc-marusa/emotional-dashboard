@@ -1,4 +1,5 @@
 // ===================== CONFIG =====================
+// IMPORTANTE: Substitua a URL abaixo pela URL do seu Google Apps Script
 const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec";
 const AUTO_REFRESH_SECONDS = 30;
 // ===================================================
