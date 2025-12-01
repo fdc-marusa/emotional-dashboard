@@ -1,11 +1,10 @@
 // ===================== CONFIG - coloque aqui seu URL do Apps Script =====================
 const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec"; // <<-- substitua
-const AUTO_REFRESH_SECONDS = 45; // polling
 // =======================================================================================
 
 let state = { raw: null, chart: null };
 
-// perguntas (textos EXATOS como aparecem nas chaves do JSON)
+// perguntas (textos EXATOS que aparecem nas chaves do JSON)
 const QUESTIONS = [
   "Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?",
   "Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?",
@@ -13,23 +12,20 @@ const QUESTIONS = [
   "Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?"
 ];
 
-// mapeamento de emoji -> rótulo curto (usado no gráfico/legenda)
-const EMOJI_MAP = {
-  "😞": "Ruim",
-  "😬": "Regular",
-  "🙂": "Bom",
-  "😀": "Ótimo"
-};
-// cores por categoria (mesma ordem usada para datasets)
+// abreviações (eixo X)
+const ABBR = ["Autocontrole", "Nomear emoções", "Autoconfiança", "Relacionamento"];
+
+// mapeamento emoji -> rótulo
+const EMOJI_MAP = { "😞": "Ruim", "😬": "Regular", "🙂": "Bom", "😀": "Ótimo" };
 const CATEGORY_ORDER = ["😞","😬","🙂","😀"];
 const CATEGORY_COLORS = {
-  "😞": "rgba(220,53,69,0.9)",   // vermelho
-  "😬": "rgba(255,159,64,0.9)",  // laranja
-  "🙂": "rgba(255,205,86,0.9)",  // amarelo
-  "😀": "rgba(75,192,192,0.9)"   // verde
+  "😞": "rgba(220,53,69,0.9)",
+  "😬": "rgba(255,159,64,0.9)",
+  "🙂": "rgba(255,205,86,0.9)",
+  "😀": "rgba(75,192,192,0.9)"
 };
 
-// chaves das perguntas NPS / avaliacao (EXATAS)
+// chaves em avaliacao
 const KEY_REC = "Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?";
 const KEY_AUTO = "Em uma escala de 1 a 5, como você se autoavalia em relação ao seu desempenho nas aulas deste módulo?";
 const KEY_PROF1 = "Em uma escala de 1 a 5, como você avalia o professor 1 na condução das aulas deste módulo?";
@@ -40,7 +36,7 @@ const q = id => document.getElementById(id);
 const setText = (id, txt) => { const el = q(id); if (el) el.textContent = txt; };
 const setHTML = (id, html) => { const el = q(id); if (el) el.innerHTML = html; };
 
-// fetch dos dados
+// fetch
 async function fetchExec() {
   try {
     const url = APPSCRIPT_URL + "?_ts=" + Date.now();
@@ -54,7 +50,7 @@ async function fetchExec() {
   }
 }
 
-// populate filters
+// populates selects
 function populateFilters(raw) {
   const combine = (raw.checkin||[]).concat(raw.checkout||[]).concat(raw.avaliacao||[]);
   const turmas = Array.from(new Set(combine.map(r => r["Turma"]).filter(Boolean))).sort();
@@ -89,43 +85,70 @@ function applyFilters(rows) {
   });
 }
 
-// detecta emoji inicial e retorna categoria (Ruim/Regular/Bom/Ótimo) e emoji
-function detectCategoryFromText(text) {
+// detecta emoji no começo do texto
+function detectEmoji(text) {
   if (!text) return null;
   const s = text.toString().trim();
-  // verificar primeiro caractere (emoji comum)
   const first = s[0];
-  if (EMOJI_MAP[first]) return { emoji: first, label: EMOJI_MAP[first] };
-  // caso emoji seguido por espaço: verificar first two runes
-  // fallback: procurar qualquer emoji em string
-  for (const em of Object.keys(EMOJI_MAP)) {
-    if (s.indexOf(em) >= 0) return { emoji: em, label: EMOJI_MAP[em] };
-  }
-  // se nada encontrado
+  if (EMOJI_MAP[first]) return first;
+  for (const em of Object.keys(EMOJI_MAP)) if (s.indexOf(em) >= 0) return em;
   return null;
 }
 
-// conta por categoria (para uma pergunta) em combinedRows (checkin+checkout)
-function countCategoriesForQuestion(combinedRows, questionKey) {
+// conta por categoria para uma pergunta (separa checkin e checkout)
+function countCategories(rows, questionKey) {
   const counts = {};
-  CATEGORY_ORDER.forEach(em => counts[em] = 0);
-  (combinedRows || []).forEach(row => {
-    const raw = (row[questionKey] || "").toString().trim();
+  CATEGORY_ORDER.forEach(e => counts[e] = 0);
+  (rows || []).forEach(r => {
+    const raw = (r[questionKey] || "").toString().trim();
     if (!raw) return;
-    const cat = detectCategoryFromText(raw);
-    if (cat) counts[cat.emoji] = (counts[cat.emoji] || 0) + 1;
+    const em = detectEmoji(raw);
+    if (em && counts[em] !== undefined) counts[em] = counts[em] + 1;
   });
-  return counts; // object with emoji keys
+  return counts;
 }
 
-// build stacked bar chart
-function buildCompareChart(labels, datasetsData) {
+// plugin para desenhar números dentro das fatias/barras
+const barValuePlugin = {
+  id: 'barValuePlugin',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((dataset, datasetIndex) => {
+      const meta = chart.getDatasetMeta(datasetIndex);
+      if (!meta || !meta.data) return;
+      meta.data.forEach((bar, index) => {
+        const val = dataset.data[index];
+        if (val === 0 || val === null || val === undefined) return;
+        // bar is a Rectangle element
+        const box = bar;
+        const x = box.x;
+        const y = (box.y + box.base) / 2; // middle of segment
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        // if segment is too small, draw above segment
+        const height = Math.abs(box.base - box.y);
+        if (height < 14) {
+          ctx.fillStyle = '#000';
+          ctx.fillText(val.toString(), x, box.y - 8);
+        } else {
+          ctx.fillText(val.toString(), x, y);
+        }
+        ctx.restore();
+      });
+    });
+  }
+};
+
+// build chart with two stacks: 'checkin' and 'checkout'
+function buildCompareChart(labels, datasets) {
   const ctx = q("chart-compare").getContext("2d");
   if (state.chart) state.chart.destroy();
-
   state.chart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: datasetsData },
+    data: { labels, datasets },
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
@@ -137,34 +160,36 @@ function buildCompareChart(labels, datasetsData) {
         x: { stacked: true },
         y: { stacked: true, beginAtZero: true, ticks: { precision:0 } }
       }
-    }
+    },
+    plugins: [barValuePlugin]
   });
 
-  renderLegendCompare(datasetsData);
+  // render legend custom (only 4 categories)
+  renderLegend();
 }
 
-function renderLegendCompare(datasetsData) {
+function renderLegend() {
   const el = q("legend-compare");
   el.innerHTML = "";
-  datasetsData.forEach(ds => {
+  CATEGORY_ORDER.forEach(em => {
     const item = document.createElement("div");
     item.className = "legend-item";
     const sw = document.createElement("span");
     sw.className = "legend-swatch";
-    sw.style.background = ds.backgroundColor;
+    sw.style.background = CATEGORY_COLORS[em];
     const txt = document.createElement("span");
-    txt.textContent = ds.label;
+    txt.textContent = `${em} ${EMOJI_MAP[em]}`;
     item.appendChild(sw);
     item.appendChild(txt);
     el.appendChild(item);
   });
 }
 
-// cálculos numéricos
+// utilidades numéricas
 function asNumber(v) {
   if (v === null || v === undefined) return NaN;
   if (typeof v === "number") return v;
-  const s = v.toString().trim().replace(",","." );
+  const s = v.toString().trim().replace(",",".");
   const n = Number(s);
   return isNaN(n) ? NaN : n;
 }
@@ -175,8 +200,7 @@ function calcAverage(rows, key) {
   return sum / vals.length;
 }
 
-// CALCULO NPS (segundo sua formula)
-// retorna objeto { total, detratores, neutros, promotores, pctDetr, pctProm, nps }
+// Cálculo NPS (porcentagem e retorno nps)
 function computeNPSPercent(rows, key) {
   const vals = (rows||[]).map(r => asNumber(r[key])).filter(n => !isNaN(n));
   const total = vals.length;
@@ -193,7 +217,7 @@ function computeNPSPercent(rows, key) {
   return { total, detratores: detr, neutros: neut, promotores: prom, pctDetr, pctProm, nps };
 }
 
-// formata AI summary (parágrafos, ### -> bold)
+// format AI summary (keep and persist)
 function formatAISummary(rawText) {
   if (!rawText) return "Sem conteúdo da IA.";
   let s = rawText.replace(/—/g, "-").replace(/\r/g, "");
@@ -216,8 +240,17 @@ function escapeHtml(text) {
   return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// shorten labels do eixo x
-function shorten(s, max=70) {
+// localStorage helpers for AI persistence
+const AI_STORAGE_KEY = "dashboard_ai_summary_v1";
+function saveAISummary(html) {
+  try { localStorage.setItem(AI_STORAGE_KEY, html || ""); } catch(e){/*ignore*/}
+}
+function loadAISummary() {
+  try { return localStorage.getItem(AI_STORAGE_KEY); } catch(e){ return null; }
+}
+
+// shorten labels
+function shorten(s, max=60) {
   if (!s) return s;
   if (s.length <= max) return s;
   const cut = s.slice(0,max);
@@ -225,7 +258,7 @@ function shorten(s, max=70) {
   return (lastSpace > 10 ? cut.slice(0,lastSpace) : cut) + '...';
 }
 
-// RENDER PRINCIPAL
+// render principal (executado apenas quando usuário clicar Atualizar)
 async function renderAll() {
   const data = await fetchExec();
   if (!data) return;
@@ -236,35 +269,49 @@ async function renderAll() {
 
   populateFilters(raw);
 
-  // aplicar filtros
+  // filtros aplicados
   const checkinFiltered = applyFilters(raw.checkin || []);
   const checkoutFiltered = applyFilters(raw.checkout || []);
   const avaliacaoFiltered = applyFilters(raw.avaliacao || []);
 
-  const combined = checkinFiltered.concat(checkoutFiltered);
+  // montar datasets:
+  // Para cada categoria (😞,😬,🙂,😀) criamos 2 datasets: uma para CHECKIN (stack 'checkin') e outra para CHECKOUT (stack 'checkout').
+  // Cada dataset terá data com 4 valores (uma por pergunta).
+  const labels = ABBR.slice(); // ["Autocontrole", ...]
+  const datasets = [];
 
-  // montar datasets: para cada categoria (ORDERED) temos array de counts por pergunta
-  const labels = QUESTIONS.map(q => shorten(q, 66));
-  const datasets = CATEGORY_ORDER.map(catEmoji => {
-    const dataPerQ = QUESTIONS.map(qk => {
-      const counts = countCategoriesForQuestion(combined, qk);
-      return counts[catEmoji] || 0;
+  CATEGORY_ORDER.forEach(cat => {
+    // checkin dataset
+    const dataCheckin = QUESTIONS.map(qk => {
+      const c = countCategories(checkinFiltered, qk);
+      return c[cat] || 0;
     });
-    return {
-      label: `${catEmoji} ${EMOJI_MAP[catEmoji]}`,
-      data: dataPerQ,
-      backgroundColor: CATEGORY_COLORS[catEmoji],
-      stack: 'stack1'
-    };
+    datasets.push({
+      label: `${cat} ${EMOJI_MAP[cat]} (Check-in)`,
+      data: dataCheckin,
+      backgroundColor: CATEGORY_COLORS[cat],
+      stack: 'checkin'
+    });
+
+    // checkout dataset
+    const dataCheckout = QUESTIONS.map(qk => {
+      const c = countCategories(checkoutFiltered, qk);
+      return c[cat] || 0;
+    });
+    datasets.push({
+      label: `${cat} ${EMOJI_MAP[cat]} (Check-out)`,
+      data: dataCheckout,
+      backgroundColor: CATEGORY_COLORS[cat],
+      stack: 'checkout'
+    });
   });
 
   buildCompareChart(labels, datasets);
 
-  // NPS: usar computeNPSPercent e exibir nps (valor)
+  // NPS (avaliacao)
   const npsObj = computeNPSPercent(avaliacaoFiltered, KEY_REC);
   setText("metric-nps-rec", npsObj.nps === null ? "—" : (Math.round(npsObj.nps * 10)/10).toFixed(1));
 
-  // medias professor1/prof2/auto
   const avgAuto = calcAverage(avaliacaoFiltered, KEY_AUTO);
   const avgProf1 = calcAverage(avaliacaoFiltered, KEY_PROF1);
   const avgProf2 = calcAverage(avaliacaoFiltered, KEY_PROF2);
@@ -273,18 +320,30 @@ async function renderAll() {
   setText("metric-nps-prof1", avgProf1 === null ? "—" : avgProf1.toFixed(2));
   setText("metric-nps-prof2", avgProf2 === null ? "—" : avgProf2.toFixed(2));
 
-  // AI summary if backend returned it
+  // AI: ONLY update ai-summary if backend actually returned ai.
+  // Otherwise keep existing summary (from prior Generate or localStorage).
   if (data.ai) {
-    setHTML("ai-summary", formatAISummary(data.ai.resumo || data.ai.text || JSON.stringify(data.ai)));
+    const html = formatAISummary(data.ai.resumo || data.ai.text || JSON.stringify(data.ai));
+    setHTML("ai-summary", html);
+    saveAISummary(html);
   } else {
-    setText("ai-summary", "Clique em 'Gerar Insights IA' para solicitar um resumo.");
+    // if current element is default text and we have stored AI, load it
+    const cur = (q("ai-summary").textContent || "").trim();
+    if ((!cur || cur.startsWith("Clique em")) && loadAISummary()) {
+      setHTML("ai-summary", loadAISummary());
+    }
+    // otherwise, keep whatever is already in ai-summary (persistence achieved)
   }
 }
 
-// INSIGHTS (chama action=insights)
+// INSIGHTS: chama Apps Script action=insights e substitui o resumo (salva em localStorage)
 async function fetchInsights() {
   try {
     const params = new URLSearchParams({ action: "insights", _ts: Date.now() });
     const turma = q("sel-turma").value; if (turma !== "Todos") params.set("turma", turma);
     const eixo  = q("sel-eixo").value;  if (eixo !== "Todos")  params.set("eixo", eixo);
-    const month = q("sel-month").value; if (month !== "Todos") params.set("month
+    const month = q("sel-month").value; if (month !== "Todos") params.set("month", month);
+    const url = APPSCRIPT_URL + "?" + params.toString();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status + " " + res.statusText);
+    con
