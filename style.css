@@ -19,6 +19,7 @@ body { background:#f4f4f8; color:#222; }
 /* ACTIONS */
 .actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
 .actions button { background:#65266D; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+.actions button#btn-insights { background:#ff8a3d; }
 .last-update { font-size:13px; opacity:0.8; margin-left:10px; }
 
 /* NPS METRICS */
@@ -34,8 +35,13 @@ body { background:#f4f4f8; color:#222; }
 .chart-card.wide { width:100%; }
 .chart-card h4 { margin-bottom:12px; font-size:15px; }
 
+/* inline legend under chart */
+.legend-inline { margin-top:10px; display:flex; gap:12px; flex-wrap:wrap; font-size:13px; }
+.legend-item { display:inline-flex; gap:6px; align-items:center; background:#fafafa; padding:6px 8px; border-radius:8px; border:1px solid #eee; }
+.legend-swatch { width:14px; height:14px; border-radius:3px; display:inline-block; }
+
 /* AI SUMMARY */
-.ai-box { background:#fbfbff; border:1px solid #e9e7ef; padding:14px; border-radius:8px; min-height:160px; line-height:1.5; font-size:14px; white-space:normal; }
+.ai-box { background:#fbfbff; border:1px solid #e9e7ef; padding:14px; border-radius:8px; min-height:160px; line-height:1.6; font-size:14px; white-space:normal; }
 
 /* FOOTER */
 .footer { text-align:center; margin:26px 0 60px; color:#666; font-size:13px; }
