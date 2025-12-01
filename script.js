@@ -1,5 +1,5 @@
 // ===================== CONFIG - coloque aqui seu URL do Apps Script =====================
-const APPSCRIPT_URL = "https://script.google.com/macros/s/SEU_ENDPOINT_AQUI/exec"; // <<-- substitua
+const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec"; // <<-- substitua
 const AUTO_REFRESH_SECONDS = 45; // quando quiser mudar auto-refresh
 // =======================================================================================
 
