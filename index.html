@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard de Inteligência Emocional</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Dashboard de Inteligência Emocional</h1>
+    <p class="subtitle">Check-in, Check-out e Avaliação — dados em tempo real</p>
+  </header>
+
+  <main class="container">
+    <section class="controls">
+      <div class="filter">
+        <label>Turma</label>
+        <select id="sel-turma"><option>Todos</option></select>
+      </div>
+      <div class="filter">
+        <label>Eixo</label>
+        <select id="sel-eixo"><option>Todos</option></select>
+      </div>
+      <div class="filter">
+        <label>Mês/Ano</label>
+        <select id="sel-month"><option>Todos</option></select>
+      </div>
+      <div class="actions">
+        <button id="btn-refresh">Atualizar agora</button>
+        <button id="btn-insights">Gerar Insights IA</button>
+        <span id="last-update" class="last-update"></span>
+      </div>
+    </section>
+
+    <section id="metrics" class="grid-3">
+      <div class="card" id="card-checkin"><h3>Check-in (Média geral)</h3><div class="metric" id="metric-checkin">—</div></div>
+      <div class="card" id="card-checkout"><h3>Check-out (Média geral)</h3><div class="metric" id="metric-checkout">—</div></div>
+      <div class="card" id="card-avaliacao"><h3>Avaliação (Recomendação)</h3><div class="metric" id="metric-avaliacao">—</div></div>
+    </section>
+
+    <section class="charts">
+      <div class="chart-card">
+        <h4>Check-in — Pergunta 1</h4>
+        <canvas id="chart-checkin-q1"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>Check-out — Pergunta 1</h4>
+        <canvas id="chart-checkout-q1"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h4>Check-in — Pergunta 2</h4>
+        <canvas id="chart-checkin-q2"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>Check-out — Pergunta 2</h4>
+        <canvas id="chart-checkout-q2"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h4>Comparação (Médias Q1-Q4)</h4>
+        <canvas id="chart-compare"></canvas>
+      </div>
+
+      <div class="chart-card wide">
+        <h4>Resumo das respostas abertas (IA)</h4>
+        <div id="ai-summary" class="ai-box">Clique em "Gerar Insights IA" para obter o resumo.</div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <small>Dados fornecidos por Apps Script • Atualização automática</small>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
