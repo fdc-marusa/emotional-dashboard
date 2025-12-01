@@ -35,33 +35,56 @@
       </div>
     </section>
 
-    <section id="metrics" class="grid-3">
-      <div class="card" id="card-checkin"><h3>Check-in (Média geral)</h3><div class="metric" id="metric-checkin">—</div></div>
-      <div class="card" id="card-checkout"><h3>Check-out (Média geral)</h3><div class="metric" id="metric-checkout">—</div></div>
-      <div class="card" id="card-avaliacao"><h3>Avaliação (Recomendação)</h3><div class="metric" id="metric-avaliacao">—</div></div>
+    <!-- métricas -->
+    <section id="metrics" class="grid-metrics">
+      <div class="card" id="card-consolidada">
+        <h3>Média (consolidada por pergunta)</h3>
+        <div class="metric" id="metric-consolidada">—</div>
+      </div>
+
+      <div class="card" id="card-checkout">
+        <h3>Check-out (Média geral)</h3>
+        <div class="metric" id="metric-checkout">—</div>
+      </div>
+
+      <div class="card" id="card-avaliacao">
+        <h3>Avaliação — Recomendação (coluna 3)</h3>
+        <div class="metric" id="metric-avaliacao">—</div>
+      </div>
+
+      <div class="card" id="card-avaliacao-auto">
+        <h3>Avaliação — Autoavaliação (coluna 4)</h3>
+        <div class="metric" id="metric-avaliacao-auto">—</div>
+      </div>
+
+      <div class="card" id="card-avaliacao-prof">
+        <h3>Avaliação — Professor (coluna 5)</h3>
+        <div class="metric" id="metric-avaliacao-prof">—</div>
+      </div>
     </section>
 
     <section class="charts">
+      <!-- títulos dinâmicos (serão preenchidos pelo JS com o enunciado completo) -->
       <div class="chart-card">
-        <h4>Check-in — Pergunta 1</h4>
+        <h4 id="h-checkin-q1">Check-in — (Pergunta 1)</h4>
         <canvas id="chart-checkin-q1"></canvas>
       </div>
       <div class="chart-card">
-        <h4>Check-out — Pergunta 1</h4>
+        <h4 id="h-checkout-q1">Check-out — (Pergunta 1)</h4>
         <canvas id="chart-checkout-q1"></canvas>
       </div>
 
       <div class="chart-card">
-        <h4>Check-in — Pergunta 2</h4>
+        <h4 id="h-checkin-q2">Check-in — (Pergunta 2)</h4>
         <canvas id="chart-checkin-q2"></canvas>
       </div>
       <div class="chart-card">
-        <h4>Check-out — Pergunta 2</h4>
+        <h4 id="h-checkout-q2">Check-out — (Pergunta 2)</h4>
         <canvas id="chart-checkout-q2"></canvas>
       </div>
 
       <div class="chart-card">
-        <h4>Comparação (Médias Q1-Q4)</h4>
+        <h4 id="h-compare">Comparação (Médias Q1-Q4)</h4>
         <canvas id="chart-compare"></canvas>
       </div>
 
