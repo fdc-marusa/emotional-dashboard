@@ -44,6 +44,14 @@ body { background:#f4f4f8; color:#222; }
 .legend-item { display:inline-flex; gap:8px; align-items:center; background:#fafafa; padding:6px 8px; border-radius:8px; border:1px solid #eee; }
 .legend-swatch { width:16px; height:16px; border-radius:3px; display:inline-block; }
 
+/* TABLE */
+.table-wrap { overflow-x:auto; margin-top:8px; }
+.table-compare { width:100%; border-collapse:collapse; font-size:13px; }
+.table-compare th, .table-compare td { border:1px solid #eee; padding:6px 8px; text-align:center; }
+.table-compare th { background:#fafafa; font-weight:700; }
+.delta-up { color: #0b6623; font-weight:700; } /* green */
+.delta-down { color: #c62828; font-weight:700; } /* red */
+
 /* AI SUMMARY */
 .ai-box { background:#fbfbff; border:1px solid #e9e7ef; padding:14px; border-radius:8px; min-height:160px; line-height:1.6; font-size:14px; white-space:normal; }
 
