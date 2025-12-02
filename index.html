@@ -3,38 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard — Inteligência Emocional</title>
+  <title>Dashboard de Inteligência Emocional</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <header class="topbar">
-    <h1>Dashboard • Inteligência Emocional</h1>
-    <p class="subtitle">Filtros + atualização automática (45s). Insight IA só altera quando você clicar em "Gerar Insights IA".</p>
+    <h1>Dashboard de Inteligência Emocional</h1>
+    <p class="subtitle">Check-in, Check-out e Avaliação — dados em tempo real</p>
   </header>
-
-  <div id="diag" class="diag">
-    <strong>Diagnóstico:</strong> <span id="diag-msg">Inicializando...</span>
-    <button id="diag-show-json" class="mini">Mostrar JSON (fallback)</button>
-  </div>
 
   <main class="container">
     <section class="controls">
       <div class="filter">
-        <label for="sel-turma">Turma</label>
+        <label>Turma</label>
         <select id="sel-turma"><option>Todos</option></select>
       </div>
-
       <div class="filter">
-        <label for="sel-eixo">Eixo</label>
+        <label>Eixo</label>
         <select id="sel-eixo"><option>Todos</option></select>
       </div>
-
       <div class="filter">
-        <label for="sel-month">Mês/Ano</label>
+        <label>Mês/Ano</label>
         <select id="sel-month"><option>Todos</option></select>
       </div>
-
       <div class="actions">
         <button id="btn-refresh">Atualizar agora</button>
         <button id="btn-insights">Gerar Insights IA</button>
@@ -42,70 +33,41 @@
       </div>
     </section>
 
-    <section class="grid-metrics" id="nps-grid">
-      <div class="card nps-card">
-        <h3>Recomendação (NPS)</h3>
-        <div class="metric" id="metric-nps-rec">—</div>
-        <div class="help">NPS = %Promotores − %Detratores</div>
-        <div class="help small" id="nps-breakdown">
-          %Detratores: <span id="nps-pct-detr">—</span> &nbsp; | &nbsp; %Promotores: <span id="nps-pct-prom">—</span>
-        </div>
+    <section id="metrics" class="grid-3">
+      <div class="card" id="card-checkin"><h3>Check-in (Média geral)</h3><div class="metric" id="metric-checkin">—</div></div>
+      <div class="card" id="card-checkout"><h3>Check-out (Média geral)</h3><div class="metric" id="metric-checkout">—</div></div>
+      <div class="card" id="card-avaliacao"><h3>Avaliação (Recomendação)</h3><div class="metric" id="metric-avaliacao">—</div></div>
+    </section>
+
+    <!-- Novas tabelas conforme Excel: Check-in, Check-out, Resultado Final -->
+    <section id="tables" class="tables-section">
+      <div class="table-card" id="table-checkin-card">
+        <h3>CHECK-IN</h3>
+        <div class="table-wrap" id="table-checkin"></div>
       </div>
 
-      <div class="card nps-card">
-        <h3>Autoavaliação (1–5)</h3>
-        <div class="metric" id="metric-nps-auto">—</div>
-        <div class="help">Média da autoavaliação</div>
+      <div class="table-card" id="table-checkout-card">
+        <h3>CHECK-OUT</h3>
+        <div class="table-wrap" id="table-checkout"></div>
       </div>
 
-      <div class="card nps-card">
-        <h3>Professor 1 (1–5)</h3>
-        <div class="metric" id="metric-nps-prof1">—</div>
-        <div class="help">Média do professor 1</div>
-      </div>
-
-      <div class="card nps-card">
-        <h3>Professor 2 (1–5)</h3>
-        <div class="metric" id="metric-nps-prof2">—</div>
-        <div class="help">Média do professor 2</div>
+      <div class="table-card" id="table-result-card">
+        <h3>RESULTADO FINAL (CO % − CI %)</h3>
+        <div class="table-wrap" id="table-result"></div>
       </div>
     </section>
 
-    <section class="charts">
-      <div class="chart-card">
-        <h4>Comparação — Check-in</h4>
-        <canvas id="chart-checkin" height="250"></canvas>
-        <div class="legend-inline" id="legend-checkin"></div>
-      </div>
-
-      <div class="chart-card">
-        <h4>Comparação — Check-out</h4>
-        <canvas id="chart-checkout" height="250"></canvas>
-        <div class="legend-inline" id="legend-checkout"></div>
-      </div>
-
-      <div class="chart-card wide">
-        <h4>Tabela comparativa (percentual por pergunta)</h4>
-        <div id="comparison-table" class="table-wrap"></div>
-      </div>
-
+    <section class="ai-section">
       <div class="chart-card wide">
         <h4>Resumo das respostas abertas (IA)</h4>
-        <div id="ai-summary" class="ai-box">
-          <div id="insightBox">Clique em "Gerar Insights IA" para obter o resumo.</div>
-        </div>
+        <div id="ai-summary" class="ai-box">Clique em "Gerar Insights IA" para obter o resumo.</div>
       </div>
     </section>
 
     <footer class="footer">
-      <small>Dados fornecidos por Apps Script • Atualização automática (45s)</small>
+      <small>Dados fornecidos por Apps Script • Atualização automática</small>
     </footer>
   </main>
-
-  <!-- fallback sample JSON (opcional) - remova em produção -->
-  <script>
-  window.SAMPLE_JSON = {"raw":{"checkin":[{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 1","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"🙂Quase sempre, reconheço situações que me desestabilizam, mas posso melhorar o autocontrole.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"😀Sim, é “de boa” nomear as emoções que estou sentido.","Você consegue reconhecer características de um comportamento autoconfiante?":"😀 Sim, consigo! Consigo descrever políticas de diversidade e inclusão, bem como sua importância.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"🙂 Relaciono bem com as pessoas, mas trabalhar em equipe ainda é um desafio."},{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 2","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"😬Mais ou menos, reconheço situações que me desestabilizam, mas tenho dificuldade em manter o autocontrole.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"🙂Quase sempre, acho que consigo nomear a maioria das minhas emoções.","Você consegue reconhecer características de um comportamento autoconfiante?":"🙂Reconheço algumas características de um comportamento autoconfiante.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"😀Muito bom! Creio me relacionar bem com as pessoas e trabalho bem em equipe."}],"checkout":[{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 1","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"😞Não consigo, é difícil reconhecer situações que me desestabilizam.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"😀Sim, é “de boa” nomear as emoções que estou sentido.","Você consegue reconhecer características de um comportamento autoconfiante?":"😀 Sim, consigo! Consigo descrever políticas de diversidade e inclusão, bem como sua importância.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"🙂 Relaciono bem com as pessoas, mas trabalhar em equipe ainda é um desafio."},{"Timestamp":"2025-08-01T03:00:00.000Z","Score":0,"Nome completo":"Aluno 2","Turma":"Turma 50","Eixo":"Eixo 1","Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?":"😀Consigo! Reconheço as situações que me desestabilizam e respondo bem as que exigem bastante autocontrole.","Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?":"🙂Quase sempre, acho que consigo nomear a maioria das minhas emoções.","Você consegue reconhecer características de um comportamento autoconfiante?":"🙂Reconheço algumas características de um comportamento autoconfiante.","Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?":"😀Muito bom! Creio me relacionar bem com as pessoas e trabalho bem em equipe."}],"avaliacao":[{"Carimbo de data/hora":"2025-08-09T17:44:54.000Z","Nome completo":"Aluno 1","Turma":"Turma 50","Eixo":"Eixo 1","Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?":8,"Em uma escala de 1 a 5, como você se autoavalia em relação ao seu desempenho nas aulas deste módulo?":5,"Em uma escala de 1 a 5, como você avalia o professor 1 na condução das aulas deste módulo?":5,"Em uma escala de 1 a 5, como você avalia o professor 2 na condução das aulas deste módulo?":5,"Que bom (O que você gostou)":"Gostei da forma que nos foi apresentado cada assunto sobre inteligência emocional","Que tal (O que poderia ser melhor)":"Poderia acrescentar situações mais profundas sobre as emoções e sentimentos","Que pena (O que você não gostou)":"Eu n tenho oq reclamar"},{"Carimbo de data/hora":"2025-08-09T17:44:54.000Z","Nome completo":"Aluno 2","Turma":"Turma 50","Eixo":"Eixo 1","Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?":1,"Em uma escala de 1 a 5, como você se autoavalia em relação ao seu desempenho nas aulas deste módulo?":4,"Em uma escala de 1 a 5, como você avalia o professor 1 na condução das aulas deste módulo?":5,"Em uma escala de 1 a 5, como você avalia o professor 2 na condução das aulas deste módulo?":5,"Que bom (O que você gostou)":"A forma que as aulas são explicadas","Que tal (O que poderia ser melhor)":"Mais dias de aula desse tema","Que pena (O que você não gostou)":"Nada"}]}}
-  </script>
 
   <script src="script.js"></script>
 </body>
