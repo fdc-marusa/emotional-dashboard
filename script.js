@@ -1,7 +1,7 @@
 // ===================== CONFIG =====================
 // ESTA URL DEVE SER SUBSTITUÍDA PELA URL DE EXECUÇÃO DO SEU GOOGLE APPSCRIPT
 const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec";
-const AUTO_REFRESH_SECONDS = 30; // Intervalo de polling para buscar novos dados do AppScript
+const AUTO_REFRESH_SECONDS = 90; // Intervalo de polling para buscar novos dados do AppScript
 // ===================================================
 
 let state = { raw: null, processed: null };
