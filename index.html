@@ -4,9 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dashboard IE ✨</title>
+  <!-- Importando a fonte Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Hero Header -->
   <div class="hero">
     <div class="hero-content">
       <h1>🧠 Dashboard de Inteligência Emocional</h1>
@@ -14,8 +19,10 @@
     </div>
   </div>
 
+  <!-- Container Principal -->
   <div class="container">
     
+    <!-- Filtros -->
     <div class="filters-card">
       <div class="filters-grid">
         <div class="filter-group">
@@ -46,11 +53,12 @@
           ✨ Gerar Insights IA
         </button>
         <span class="last-update" id="last-update">
-          🕐 Carregando...
+          🕐 Última atualização: --:--
         </span>
       </div>
     </div>
 
+    <!-- Cards de Métricas - LINHA 1 -->
     <div class="metrics-grid">
       <div class="metric-card">
         <div class="metric-header">
@@ -81,6 +89,7 @@
       </div>
     </div>
 
+    <!-- Cards de Métricas - LINHA 2 -->
     <div class="metrics-grid">
       <div class="metric-card blue">
         <div class="metric-header">
@@ -101,38 +110,46 @@
       </div>
     </div>
 
+    <!-- Tabelas -->
     <div class="table-section">
+      <!-- Check-in -->
       <div class="table-card">
         <div class="table-header">
           <div class="table-icon">📥</div>
           <h3 class="table-title">Check-in</h3>
         </div>
+        <!-- O JS vai preencher este ID -->
         <div class="table-wrap" id="table-checkin">
-          <p style="padding:1rem; color:#888;">Carregando dados...</p>
+          <div style="padding: 1rem; text-align: center; color: #888;">Carregando dados...</div>
         </div>
       </div>
 
+      <!-- Check-out -->
       <div class="table-card">
         <div class="table-header">
           <div class="table-icon">📤</div>
           <h3 class="table-title">Check-out</h3>
         </div>
+        <!-- O JS vai preencher este ID -->
         <div class="table-wrap" id="table-checkout">
-          <p style="padding:1rem; color:#888;">Carregando dados...</p>
+          <div style="padding: 1rem; text-align: center; color: #888;">Aguardando dados...</div>
         </div>
       </div>
 
+      <!-- Resultado -->
       <div class="table-card">
         <div class="table-header">
           <div class="table-icon">📊</div>
           <h3 class="table-title">Resultado Final (CO % − CI %)</h3>
         </div>
+        <!-- O JS vai preencher este ID -->
         <div class="table-wrap" id="table-result">
-           <p style="padding:1rem; color:#888;">Calculando diferenças...</p>
+          <div style="padding: 1rem; text-align: center; color: #888;">Calculando...</div>
         </div>
       </div>
     </div>
 
+    <!-- AI Summary -->
     <div class="ai-card">
       <div class="ai-header">
         <span class="ai-badge">AI Powered</span>
@@ -143,8 +160,9 @@
       </div>
     </div>
 
+    <!-- Footer -->
     <div class="footer">
-      <p>💜 Dados atualizados em tempo real • Powered by Marusa Nogueira</p>
+      <p>💜 Dados atualizados em tempo real • Dashboard IE</p>
     </div>
   </div>
 
