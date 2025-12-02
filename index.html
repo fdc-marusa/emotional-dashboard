@@ -26,34 +26,29 @@
     <div class="filters-card">
       <div class="filters-grid">
         <div class="filter-group">
-          <label>🎓 Turma</label>
+          <label for="sel-turma">🎓 Turma</label>
           <select id="sel-turma">
-            <option>Todos</option>
+            <option value="Todos">Todos</option>
           </select>
         </div>
         <div class="filter-group">
-          <label>📚 Eixo</label>
+          <label for="sel-eixo">📚 Eixo</label>
           <select id="sel-eixo">
-            <option>Todos</option>
+            <option value="Todos">Todos</option>
           </select>
         </div>
-        <div class="filter-group">
-          <label>📅 Mês/Ano</label>
-          <select id="sel-month">
-            <option>Todos</option>
-          </select>
-        </div>
+        <!-- Filtro de Mês/Ano foi removido -->
       </div>
       
       <div class="filter-actions">
         <button class="btn btn-primary" id="btn-refresh">
-          🔄 Atualizar
+          🔄 Atualizar Dados
         </button>
         <button class="btn btn-secondary" id="btn-insights">
           ✨ Gerar Insights IA
         </button>
         <span class="last-update" id="last-update">
-          🕐 Última atualização: --:--
+          🕐 Carregando...
         </span>
       </div>
     </div>
@@ -116,9 +111,8 @@
       <div class="table-card">
         <div class="table-header">
           <div class="table-icon">📥</div>
-          <h3 class="table-title">Check-in</h3>
+          <h3 class="table-title">Check-in (CI %)</h3>
         </div>
-        <!-- O JS vai preencher este ID -->
         <div class="table-wrap" id="table-checkin">
           <div style="padding: 1rem; text-align: center; color: #888;">Carregando dados...</div>
         </div>
@@ -128,9 +122,8 @@
       <div class="table-card">
         <div class="table-header">
           <div class="table-icon">📤</div>
-          <h3 class="table-title">Check-out</h3>
+          <h3 class="table-title">Check-out (CO %)</h3>
         </div>
-        <!-- O JS vai preencher este ID -->
         <div class="table-wrap" id="table-checkout">
           <div style="padding: 1rem; text-align: center; color: #888;">Aguardando dados...</div>
         </div>
@@ -142,7 +135,6 @@
           <div class="table-icon">📊</div>
           <h3 class="table-title">Resultado Final (CO % − CI %)</h3>
         </div>
-        <!-- O JS vai preencher este ID -->
         <div class="table-wrap" id="table-result">
           <div style="padding: 1rem; text-align: center; color: #888;">Calculando...</div>
         </div>
