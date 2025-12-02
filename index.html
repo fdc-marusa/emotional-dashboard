@@ -3,99 +3,150 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard de Inteligência Emocional</title>
+  <title>Dashboard IE ✨</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>Dashboard de Inteligência Emocional</h1>
-    <p class="subtitle">Check-in, Check-out e Avaliação — dados em tempo real</p>
-  </header>
-
-  <main class="container">
-    <section class="controls">
-      <div class="filter">
-        <label>Turma</label>
-        <select id="sel-turma"><option>Todos</option></select>
-      </div>
-      <div class="filter">
-        <label>Eixo</label>
-        <select id="sel-eixo"><option>Todos</option></select>
-      </div>
-      <div class="filter">
-        <label>Mês/Ano</label>
-        <select id="sel-month"><option>Todos</option></select>
-      </div>
-      <div class="actions">
-        <button id="btn-refresh">Atualizar agora</button>
-        <button id="btn-insights">Gerar Insights IA</button>
-        <span id="last-update" class="last-update"></span>
-      </div>
-    </section>
-
-<!-- TOP NPS CARDS - LINHA 1 -->
-<section class="grid-metrics grid-2cols" id="nps-grid-linha1">
-  <div class="card nps-card">
-    <h3>Recomendação (NPS)</h3>
-    <div class="metric" id="metric-nps-rec">—</div>
-    <div class="help">NPS = %Promotores − %Detratores</div>
-    <div class="help small" id="nps-breakdown">
-      %Detratores: <span id="nps-pct-detr">—</span> &nbsp; | &nbsp; %Promotores: <span id="nps-pct-prom">—</span>
+  <div class="hero">
+    <div class="hero-content">
+      <h1>🧠 Dashboard de Inteligência Emocional</h1>
+      <p>Acompanhe em tempo real a evolução emocional da turma</p>
     </div>
   </div>
 
-  <div class="card nps-card">
-    <h3>Autoavaliação (1–5)</h3>
-    <div class="metric" id="metric-nps-auto">—</div>
-    <div class="help">Média da autoavaliação</div>
+  <div class="container">
+    
+    <div class="filters-card">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label>🎓 Turma</label>
+          <select id="sel-turma">
+            <option>Todos</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>📚 Eixo</label>
+          <select id="sel-eixo">
+            <option>Todos</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>📅 Mês/Ano</label>
+          <select id="sel-month">
+            <option>Todos</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-primary" id="btn-refresh">
+          🔄 Atualizar
+        </button>
+        <button class="btn btn-secondary" id="btn-insights">
+          ✨ Gerar Insights IA
+        </button>
+        <span class="last-update" id="last-update">
+          🕐 Carregando...
+        </span>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <div class="metric-icon">🎯</div>
+          <div class="metric-title">NPS - Recomendação</div>
+        </div>
+        <div class="metric-value" id="metric-nps-rec">—</div>
+        <div class="metric-subtitle">Net Promoter Score</div>
+        <div class="metric-details">
+          <div class="metric-detail">
+            <span>😞 Detratores:</span>
+            <strong id="nps-pct-detr">—</strong>
+          </div>
+          <div class="metric-detail">
+            <span>😀 Promotores:</span>
+            <strong id="nps-pct-prom">—</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-card orange">
+        <div class="metric-header">
+          <div class="metric-icon">⭐</div>
+          <div class="metric-title">Autoavaliação</div>
+        </div>
+        <div class="metric-value" id="metric-nps-auto">—</div>
+        <div class="metric-subtitle">Escala de 1 a 5</div>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card blue">
+        <div class="metric-header">
+          <div class="metric-icon">👨‍🏫</div>
+          <div class="metric-title">Professor 1</div>
+        </div>
+        <div class="metric-value" id="metric-nps-prof1">—</div>
+        <div class="metric-subtitle">Avaliação do professor</div>
+      </div>
+
+      <div class="metric-card green">
+        <div class="metric-header">
+          <div class="metric-icon">👩‍🏫</div>
+          <div class="metric-title">Professor 2</div>
+        </div>
+        <div class="metric-value" id="metric-nps-prof2">—</div>
+        <div class="metric-subtitle">Avaliação do professor</div>
+      </div>
+    </div>
+
+    <div class="table-section">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-icon">📥</div>
+          <h3 class="table-title">Check-in</h3>
+        </div>
+        <div class="table-wrap" id="table-checkin">
+          <p style="padding:1rem; color:#888;">Carregando dados...</p>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-icon">📤</div>
+          <h3 class="table-title">Check-out</h3>
+        </div>
+        <div class="table-wrap" id="table-checkout">
+          <p style="padding:1rem; color:#888;">Carregando dados...</p>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-icon">📊</div>
+          <h3 class="table-title">Resultado Final (CO % − CI %)</h3>
+        </div>
+        <div class="table-wrap" id="table-result">
+           <p style="padding:1rem; color:#888;">Calculando diferenças...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-card">
+      <div class="ai-header">
+        <span class="ai-badge">AI Powered</span>
+        <h4 class="ai-title">Resumo Inteligente dos Resultados</h4>
+      </div>
+      <div class="ai-content" id="ai-summary">
+        Clique em "Gerar Insights IA" para obter uma análise detalhada dos dados da turma.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>💜 Dados atualizados em tempo real • Powered by Marusa Nogueira</p>
+    </div>
   </div>
-</section>
-
-<!-- TOP NPS CARDS - LINHA 2 -->
-<section class="grid-metrics grid-2cols" id="nps-grid-linha2">
-  <div class="card nps-card">
-    <h3>Professor 1 (1–5)</h3>
-    <div class="metric" id="metric-nps-prof1">—</div>
-    <div class="help">Média do professor 1</div>
-  </div>
-
-  <div class="card nps-card">
-    <h3>Professor 2 (1–5)</h3>
-    <div class="metric" id="metric-nps-prof2">—</div>
-    <div class="help">Média do professor 2</div>
-  </div>
-</section>
-
-    <!-- TABELAS -->
-    <section id="tables" class="tables-section">
-      <div class="table-card" id="table-checkin-card">
-        <h3>CHECK-IN</h3>
-        <div class="table-wrap" id="table-checkin"></div>
-      </div>
-
-      <div class="table-card" id="table-checkout-card">
-        <h3>CHECK-OUT</h3>
-        <div class="table-wrap" id="table-checkout"></div>
-      </div>
-
-      <div class="table-card" id="table-result-card">
-        <h3>RESULTADO FINAL (CO % − CI %)</h3>
-        <div class="table-wrap" id="table-result"></div>
-      </div>
-    </section>
-
-    <!-- RESUMO IA -->
-    <section class="ai-section">
-      <div class="table-card wide">
-        <h4>Resumo dos resultados</h4>
-        <div id="ai-summary" class="ai-box">Clique em "Gerar Insights IA" para obter o resumo.</div>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <small>Dados fornecidos por Apps Script • Atualização automática</small>
-    </footer>
-  </main>
 
   <script src="script.js"></script>
 </body>
