@@ -1,5 +1,5 @@
 // ===================== CONFIG =====================
-const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec"; // <<-- substitua pela sua URL /exec
+const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec";
 const AUTO_REFRESH_SECONDS = 30; // polling interval
 // ===================================================
 
@@ -70,23 +70,57 @@ function populateFilters(data) {
   const selEixo  = q("sel-eixo");
   const selMonth = q("sel-month");
 
+  // if select doesn't exist (older html) try other ids
+  if (!selTurma && q("filter-turma")) {
+    // older naming; populate both
+    fillSelect(q("filter-turma"), turmas);
+    fillSelect(q("filter-eixo"), eixos);
+    fillSelect(q("filter-month"), months);
+    return;
+  }
+
   [selTurma, selEixo, selMonth].forEach(el => {
+    if (!el) return;
+    // keep first "Todos" option; if not present create it
+    if (el.options.length === 0) el.add(new Option("Todos", "Todos"));
     while(el.options.length>1) el.remove(1);
   });
 
-  turmas.forEach(t => selTurma.add(new Option(t,t)));
-  eixos.forEach(e => selEixo.add(new Option(e,e)));
-  months.forEach(m => selMonth.add(new Option(m,m)));
+  turmas.forEach(t => { if(selTurma) selTurma.add(new Option(t,t)); });
+  eixos.forEach(e => { if(selEixo) selEixo.add(new Option(e,e)); });
+  months.forEach(m => { if(selMonth) selMonth.add(new Option(m,m)); });
+
+  function fillSelect(selectEl, values) {
+    selectEl.innerHTML = '';
+    const first = document.createElement("option");
+    first.value = "Todos";
+    first.textContent = "Todos";
+    selectEl.appendChild(first);
+    values.forEach(v => {
+      if (v) {
+        const op = document.createElement("option");
+        op.value = v;
+        op.textContent = v;
+        selectEl.appendChild(op);
+      }
+    });
+  }
 }
 
 function applyFiltersToRows(rows) {
-  const turma = q("sel-turma").value;
-  const eixo  = q("sel-eixo").value;
-  const month = q("sel-month").value;
+  // Accept either "Todos" or "" (empty) as all
+  const turmaEl = q("sel-turma") || q("filter-turma");
+  const eixoEl  = q("sel-eixo") || q("filter-eixo");
+  const monthEl = q("sel-month")  || q("filter-month");
+
+  const turma = turmaEl ? turmaEl.value : "Todos";
+  const eixo  = eixoEl  ? eixoEl.value  : "Todos";
+  const month = monthEl ? monthEl.value : "Todos";
+
   return (rows||[]).filter(r => {
-    if (turma !== "Todos" && (r["Turma"]||"") !== turma) return false;
-    if (eixo  !== "Todos" && (r["Eixo"]||"") !== eixo) return false;
-    if (month !== "Todos" && (r["Timestamp"]||"") !== month) return false;
+    if (turma && turma !== "Todos" && (r["Turma"]||"") !== turma) return false;
+    if (eixo  && eixo !== "Todos" && (r["Eixo"]||"") !== eixo) return false;
+    if (month && month !== "Todos" && (r["Timestamp"]||"") !== month) return false;
     return true;
   });
 }
@@ -127,6 +161,7 @@ function formatPct(v) {
 // ---------------- Render Tables ----------------
 function renderCountsTable(containerId, tableObj) {
   const container = q(containerId);
+  if (!container) return;
   container.innerHTML = "";
   const table = document.createElement("table");
   table.className = "compare";
@@ -183,6 +218,7 @@ function buildResultTable(checkinObj, checkoutObj) {
 
 function renderResultTable(containerId, resultObj) {
   const container = q(containerId);
+  if (!container) return;
   container.innerHTML = "";
   const table = document.createElement("table");
   table.className = "compare";
@@ -225,18 +261,21 @@ function findAvaliacaoKeys(sampleRows) {
   keys.forEach(k => {
     const kn = k.toString().toLowerCase();
     if (!rec && kn.includes("recomend")) rec = k;
-    else if (!auto && (kn.includes("auto") || kn.includes("autoavalia"))) auto = k;
-    else if (kn.includes("professor") || kn.includes("prof")) {
+    else if (!auto && (kn.includes("auto") || kn.includes("autoavalia") || kn.includes("auto-avalia"))) auto = k;
+    else if (kn.includes("professor") || kn.includes("prof ")) {
       profs.push(k);
     }
   });
+  // fallback: try specific phrasing if not found
+  if (!rec) rec = keys.find(k => k.toLowerCase().includes("quanto você recomendaria"));
   return { recKey: rec, autoKey: auto, profKeys: profs };
 }
 
 // ---------------- NPS / Averages ----------------
 function computeNPS(avRows, recKey) {
+  if (!recKey) return { nps: null, promPct: 0, detrPct: 0, total: 0 };
   const numeric = avRows.map(r => Number(r[recKey])).filter(v => !isNaN(v));
-  if (!numeric.length) return { nps: null, prom: 0, detr: 0, total:0 };
+  if (!numeric.length) return { nps: null, promPct: 0, detrPct: 0, total: 0 };
   const total = numeric.length;
   const prom = numeric.filter(v => v >= 9).length;
   const detr = numeric.filter(v => v <= 6).length;
@@ -245,9 +284,31 @@ function computeNPS(avRows, recKey) {
 }
 
 function averageNumeric(rows, key) {
+  if (!key) return null;
   const nums = rows.map(r => Number(r[key])).filter(v => !isNaN(v));
   if (!nums.length) return null;
   return nums.reduce((a,b)=>a+b,0)/nums.length;
+}
+
+// ---------------- INSIGHTS RENDERING ----------------
+function renderInsightsText(aiResponse) {
+  const box = q("insights-container") || q("ai-summary") || null;
+  if (!box) return;
+  if (!aiResponse || !aiResponse.text) {
+    box.textContent = "Nenhum insight disponível.";
+    return;
+  }
+  // Keep simple formatting: double line breaks -> <br><br>, single line -> <br>
+  const safe = escapeHtml(aiResponse.text);
+  box.innerHTML = safe.replace(/\r\n/g, "\n").replace(/\n\n/g, "<br><br>").replace(/\n/g, "<br>");
+}
+
+// small helper to avoid HTML injection from AI (keeps emojis etc.)
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 // ---------------- MAIN render ----------------
@@ -274,22 +335,15 @@ async function renderAll(ignoreCache=false) {
   const resultObj = buildResultTable(checkinTableObj, checkoutTableObj);
   renderResultTable("table-result", resultObj);
 
-  // metrics NPS & averages - discover keys
+  // calculate NPS and averages locally (more robust)
   const sample = state.raw.avaliacao && state.raw.avaliacao.length ? state.raw.avaliacao : [];
   const keys = findAvaliacaoKeys(sample);
-  // compute NPS
-  if (keys.recKey) {
-    const npsObj = computeNPS(avaliacaoFiltered, keys.recKey);
-    setText("metric-nps-rec", (npsObj.nps !== null) ? npsObj.nps + "" : "—");
-    setText("nps-pct-prom", npsObj.promPct ? npsObj.promPct.toFixed(1) + "%" : "—");
-    setText("nps-pct-detr", npsObj.detrPct ? npsObj.detrPct.toFixed(1) + "%" : "—");
-  } else {
-    setText("metric-nps-rec", "—");
-    setText("nps-pct-prom", "—");
-    setText("nps-pct-detr", "—");
-  }
 
-  // auto / prof averages
+  const npsObj = computeNPS(avaliacaoFiltered, keys.recKey);
+  setText("metric-nps-rec", (npsObj.nps !== null) ? String(npsObj.nps) : "—");
+  setText("nps-pct-prom", npsObj.promPct ? npsObj.promPct.toFixed(1) + "%" : "—");
+  setText("nps-pct-detr", npsObj.detrPct ? npsObj.detrPct.toFixed(1) + "%" : "—");
+
   const autoAvg = keys.autoKey ? averageNumeric(avaliacaoFiltered, keys.autoKey) : null;
   setText("metric-nps-auto", autoAvg !== null ? Number(autoAvg).toFixed(2) : "—");
 
@@ -299,28 +353,105 @@ async function renderAll(ignoreCache=false) {
   const prof2Avg = prof2Key ? averageNumeric(avaliacaoFiltered, prof2Key) : null;
   setText("metric-nps-prof1", prof1Avg !== null ? Number(prof1Avg).toFixed(2) : "—");
   setText("metric-nps-prof2", prof2Avg !== null ? Number(prof2Avg).toFixed(2) : "—");
+
+  // Also fetch AI insights but don't block UI
+  // Build filter params
+  const turmaEl = q("sel-turma") || q("filter-turma");
+  const eixoEl  = q("sel-eixo") || q("filter-eixo");
+  const monthEl = q("sel-month") || q("filter-month");
+  const filters = {
+    turma: turmaEl ? (turmaEl.value !== "Todos" ? turmaEl.value : null) : null,
+    eixo:  eixoEl  ? (eixoEl.value  !== "Todos" ? eixoEl.value  : null) : null,
+    month: monthEl ? (monthEl.value !== "Todos" ? monthEl.value : null) : null
+  };
+
+  // fetch AI summary (non-blocking)
+  fetchInsights(filters).then(insResp => {
+    if (insResp && insResp.ai) {
+      // if the AI part is nested or different, handle gracefully
+      const aiPart = insResp.ai.text ? insResp.ai : (insResp.ai || {});
+      renderInsightsText(aiPart);
+    } else {
+      // fallback: set a simple summary using local calculations
+      const fallbackText = generateFallbackInsightsText(npsObj, autoAvg, prof1Avg, prof2Avg, resultObj);
+      renderInsightsText({ text: fallbackText });
+    }
+  }).catch(err => {
+    console.warn("AI insights fetch failed:", err);
+    const fallbackText = generateFallbackInsightsText(npsObj, autoAvg, prof1Avg, prof2Avg, resultObj);
+    renderInsightsText({ text: fallbackText });
+  });
 }
 
 // ---------------- EVENTS ----------------
-q("btn-refresh").addEventListener("click", () => renderAll(true));
-q("btn-insights").addEventListener("click", async () => {
+q("btn-refresh") && q("btn-refresh").addEventListener("click", () => renderAll(true));
+q("btn-insights") && q("btn-insights").addEventListener("click", async () => {
+  // manual request to AI and show formatted result
+  const turmaEl = q("sel-turma") || q("filter-turma");
+  const eixoEl  = q("sel-eixo") || q("filter-eixo");
+  const monthEl = q("sel-month") || q("filter-month");
   const filters = {
-    turma: q("sel-turma").value !== "Todos" ? q("sel-turma").value : null,
-    eixo: q("sel-eixo").value !== "Todos" ? q("sel-eixo").value : null,
-    month: q("sel-month").value !== "Todos" ? q("sel-month").value : null
+    turma: turmaEl ? (turmaEl.value !== "Todos" ? turmaEl.value : null) : null,
+    eixo:  eixoEl  ? (eixoEl.value  !== "Todos" ? eixoEl.value  : null) : null,
+    month: monthEl ? (monthEl.value !== "Todos" ? monthEl.value : null) : null
   };
+
   const resp = await fetchInsights(filters);
   if (!resp) return;
-  // Expect resp.ai.text to be a multi-section short summary
-  const aiTextRaw = (resp.ai && resp.ai.text) ? resp.ai.text : null;
-  if (aiTextRaw) {
-    // ensure header sections in correct order; if AI returned full text, use as-is
-    q("ai-summary").textContent = aiTextRaw;
+  if (resp.ai && resp.ai.text) {
+    renderInsightsText(resp.ai);
   } else {
-    q("ai-summary").textContent = JSON.stringify(resp.ai || resp, null, 2);
+    // fallback
+    renderInsightsText({ text: JSON.stringify(resp.ai || resp, null, 2) });
   }
 });
 
 // initial render + polling
 renderAll(true);
 setInterval(() => renderAll(true), AUTO_REFRESH_SECONDS * 1000);
+
+// ----------------- Helpers: fallback insight generator -------------
+function generateFallbackInsightsText(npsObj, autoAvg, prof1Avg, prof2Avg, resultObj) {
+  // produce a short structured fallback text so UI never shows empty
+  let lines = [];
+
+  lines.push("Recomendação (NPS)");
+  if (npsObj.nps !== null) {
+    lines.push(`A turma tem NPS ${npsObj.nps}. Promotores: ${npsObj.promPct.toFixed(1)}%. Detratores: ${npsObj.detrPct.toFixed(1)}%`);
+  } else {
+    lines.push("Sem dados suficientes para calcular NPS.");
+  }
+  lines.push(""); // blank line
+
+  lines.push("Autoavaliação (1–5)");
+  lines.push(autoAvg !== null ? `Média: ${Number(autoAvg).toFixed(2)}` : "Sem dados");
+  lines.push("");
+
+  lines.push("Professor 1 (1–5)");
+  lines.push(prof1Avg !== null ? `Média: ${Number(prof1Avg).toFixed(2)}` : "Sem dados");
+  lines.push("");
+
+  lines.push("Professor 2 (1–5)");
+  lines.push(prof2Avg !== null ? `Média: ${Number(prof2Avg).toFixed(2)}` : "Sem dados");
+  lines.push("");
+
+  lines.push("Resultado final check-in e check-out");
+  // summarize resultObj quickly: find top improvements and drops
+  try {
+    const diffs = [];
+    Object.keys(resultObj).forEach(q => {
+      const obj = resultObj[q];
+      // consider "Ótimo" difference as indicator
+      const val = obj["Ótimo"] || 0;
+      diffs.push({ q, val });
+    });
+    diffs.sort((a,b)=> b.val - a.val);
+    if (diffs.length) {
+      lines.push(`Maior avanço em: ${diffs[0].q} (${diffs[0].val.toFixed(1)}%)`);
+    }
+  } catch(e) {
+    // ignore
+  }
+
+  return lines.join("\n");
+}
