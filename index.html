@@ -1,334 +1,163 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Dados Analíticos com Filtros</title>
-    <!-- Carrega Tailwind CSS para estilização moderna e responsiva -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light gray background */
-        }
-    </style>
-    <!-- Importações do Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Configurações e variáveis globais fornecidas pelo ambiente
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // 1. Inicializa o Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        setLogLevel('Debug'); // Para ver logs úteis
-
-        // 2. Função de Autenticação
-        async function authenticateUser() {
-            try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                // O UID do usuário é necessário apenas para cumprir as regras do Firestore,
-                // mas não é usado para esta aplicação de geração de dados.
-                const userId = auth.currentUser?.uid || crypto.randomUUID();
-                console.log("Firebase autenticado. User ID:", userId);
-            } catch (error) {
-                console.error("Erro na autenticação Firebase:", error);
-            }
-        }
-
-        authenticateUser();
-
-        window.appData = {
-            auth,
-            db,
-            appId,
-            API_URL: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=`,
-            // Função de utilidade para a espera exponencial (essencial para API calls)
-            delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
-        };
-
-        // Exporta a função principal para o escopo global do módulo
-        window.generateData = generateData;
-
-        /**
-         * Gera dados analíticos fictícios usando a API Gemini com base nos filtros.
-         * Esta função só é chamada ao clicar no botão.
-         */
-        async function generateData() {
-            const categorySelect = document.getElementById('filter-category');
-            const formatSelect = document.getElementById('filter-format');
-            const resultsDiv = document.getElementById('results-container');
-            const loadingIndicator = document.getElementById('loading-indicator');
-            const errorBox = document.getElementById('error-box');
-
-            errorBox.classList.add('hidden');
-            resultsDiv.innerHTML = '';
-
-            const category = categorySelect.value;
-            const format = formatSelect.value;
-
-            // 1. Validação do Filtro - Exigir seleção
-            if (!category || !format) {
-                errorBox.textContent = 'Por favor, selecione uma Categoria e um Formato para atualizar os dados.';
-                errorBox.classList.remove('hidden');
-                return;
-            }
-
-            // 2. Configuração da Requisição Gemini
-            const systemPrompt = "Você é um gerador de dados analíticos para fins de demonstração. Sua tarefa é criar 5 registros fictícios de dados financeiros. A saída DEVE ser um array JSON estritamente conforme o schema fornecido. Os dados devem ser consistentes com a Área Financeira e a Granularidade do Relatório escolhidas.";
-            const userQuery = `Gere 5 registros para a Área Financeira: "${category}" e Granularidade do Relatório: "${format}".`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                "item": { "type": "STRING", "description": "Nome do item financeiro/ativo. Ex: Bitcoin, Dólar Futuro, Petrobrás." },
-                                "valor": { "type": "NUMBER", "description": "Valor atual do ativo. Deve ser um número." },
-                                "variacao": { "type": "STRING", "description": "Variação percentual diária/mensal. Ex: +1.25%, -0.50%." }
-                            },
-                            required: ["item", "valor", "variacao"]
-                        }
-                    }
-                }
-            };
-
-            loadingIndicator.classList.remove('hidden');
-
-            // 3. Chamada da API com Retentativas (Exponential Backoff)
-            let response = null;
-            let lastError = null;
-            const maxRetries = 3;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    response = await fetch(window.appData.API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    // Se a resposta for OK, sai do loop de retentativas
-                    break;
-                } catch (error) {
-                    lastError = error;
-                    console.warn(`Tentativa ${i + 1} falhou. Retentando em ${Math.pow(2, i)}s...`, error);
-                    if (i < maxRetries - 1) {
-                        await window.appData.delay(Math.pow(2, i) * 1000);
-                    }
-                }
-            }
-            loadingIndicator.classList.add('hidden');
-
-            if (!response || !response.ok) {
-                errorBox.textContent = `Falha ao conectar ou receber dados da API após ${maxRetries} tentativas. Erro: ${lastError?.message || 'Erro desconhecido.'}`;
-                errorBox.classList.remove('hidden');
-                return;
-            }
-
-            // 4. Processamento da Resposta
-            try {
-                const result = await response.json();
-                const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (!jsonText) {
-                    errorBox.textContent = 'A API retornou uma resposta vazia ou malformada.';
-                    errorBox.classList.remove('hidden');
-                    return;
-                }
-
-                const data = JSON.parse(jsonText);
-                if (!Array.isArray(data) || data.length === 0) {
-                    errorBox.textContent = 'Os dados gerados não são um array ou estão vazios.';
-                    errorBox.classList.remove('hidden');
-                    return;
-                }
-
-                // 5. Exibir os Dados na Tabela
-                renderTable(data, category, format);
-
-            } catch (e) {
-                errorBox.textContent = 'Erro ao processar ou analisar os dados JSON da API. Verifique a estrutura da resposta.';
-                console.error("Erro de parse JSON:", e);
-                errorBox.classList.remove('hidden');
-            }
-        }
-
-        /**
-         * Constrói e exibe a tabela de resultados.
-         */
-        function renderTable(data, category, format) {
-            const resultsDiv = document.getElementById('results-container');
-            const summaryHTML = `
-                <div class="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg shadow-inner">
-                    <p class="font-semibold">Dados Carregados:</p>
-                    <p>Filtro Aplicado - Categoria: <span class="font-bold">${category}</span> | Formato: <span class="font-bold">${format}</span></p>
-                </div>
-            `;
-
-            let tableHTML = `
-                <table class="min-w-full divide-y divide-gray-200 shadow-xl rounded-lg overflow-hidden">
-                    <thead class="bg-blue-600">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                Item
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                Valor
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                Variação
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-            `;
-
-            data.forEach(row => {
-                const isPositive = row.variacao.startsWith('+');
-                const variationClass = isPositive ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
-
-                tableHTML += `
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${row.item}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ ${row.valor.toFixed(2).replace('.', ',')}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm ${variationClass}">${row.variacao}</td>
-                    </tr>
-                `;
-            });
-
-            tableHTML += `
-                    </tbody>
-                </table>
-            `;
-
-            resultsDiv.innerHTML = summaryHTML + tableHTML;
-        }
-
-    </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard IE ✨</title>
+  <!-- Importando a fonte Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="p-4 sm:p-8">
+<body>
+  <!-- Hero Header -->
+  <div class="hero">
+    <div class="hero-content">
+      <h1>🧠 Dashboard de Inteligência Emocional</h1>
+      <p>Acompanhe em tempo real a evolução emocional da turma</p>
+    </div>
+  </div>
 
-    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b-2 pb-2">
-            Gerador de Dados Dinâmicos Gemini
-        </h1>
-
-        <!-- Controles de Filtro -->
-        <div class="flex flex-col md:flex-row gap-4 mb-6 items-end">
-
-            <!-- Filtro de Categoria -->
-            <div class="flex-1 w-full">
-                <label for="filter-category" class="block text-sm font-medium text-gray-700 mb-1">Área Financeira</label>
-                <select id="filter-category" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    <!-- Opção "Selecione aqui" como padrão -->
-                    <option value="" disabled selected>Selecione aqui</option>
-                    <option value="Ações Brasileiras">Ações Brasileiras</option>
-                    <option value="Criptomoedas">Criptomoedas</option>
-                    <option value="Commodities Globais">Commodities Globais</option>
-                    <option value="Fundos de Investimento">Fundos de Investimento</option>
-                </select>
-            </div>
-
-            <!-- Filtro de Formato -->
-            <div class="flex-1 w-full">
-                <label for="filter-format" class="block text-sm font-medium text-gray-700 mb-1">Granularidade do Relatório</label>
-                <select id="filter-format" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    <!-- Opção "Selecione aqui" como padrão -->
-                    <option value="" disabled selected>Selecione aqui</option>
-                    <option value="Diário (Detalhado)">Diário (Detalhado)</option>
-                    <option value="Mensal (Resumo)">Mensal (Resumo)</option>
-                    <option value="Trimestral (Macro)">Trimestral (Macro)</option>
-                </select>
-            </div>
-
-            <!-- Botão de Atualizar Dados -->
-            <button
-                id="update-button"
-                onclick="generateData()"
-                class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out transform hover:scale-[1.02]"
-            >
-                <i class="fa-solid fa-sync-alt mr-2"></i>
-                Atualizar Dados
-            </button>
+  <!-- Container Principal -->
+  <div class="container">
+    
+    <!-- Filtros -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="sel-turma">🎓 Turma</label>
+          <select id="sel-turma">
+            <option value="Todos">Todos</option>
+          </select>
         </div>
-
-        <!-- Mensagem de Erro/Alerta (substitui alert()) -->
-        <div id="error-box" class="hidden p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-100 border border-red-400" role="alert">
-            <!-- Mensagens de erro aparecerão aqui -->
+        <div class="filter-group">
+          <label for="sel-eixo">📚 Eixo</label>
+          <select id="sel-eixo">
+            <option value="Todos">Todos</option>
+          </select>
         </div>
-
-        <!-- Indicador de Carregamento -->
-        <div id="loading-indicator" class="hidden flex justify-center items-center py-8">
-            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span class="text-lg font-medium text-gray-600">Gerando dados analíticos, aguarde...</span>
-        </div>
-
-        <!-- Container para a Tabela de Resultados -->
-        <div id="results-container" class="mt-8">
-            <p class="text-center text-gray-500 p-6 bg-gray-50 border border-dashed rounded-lg">
-                Selecione os filtros acima e clique em "Atualizar Dados" para carregar as informações.
-            </p>
-        </div>
-        
+        <!-- Filtro de Mês/Ano foi removido -->
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-primary" id="btn-refresh">
+          🔄 Atualizar Dados
+        </button>
+        <button class="btn btn-secondary" id="btn-insights">
+          ✨ Gerar Insights IA
+        </button>
+        <span class="last-update" id="last-update">
+          🕐 Carregando...
+        </span>
+      </div>
     </div>
 
-    <!-- Script para garantir o foco no botão de atualizar e persistir seleção (opcional) -->
-    <script>
-        // Função utilitária para manter o estado dos filtros após o carregamento da página
-        // Não a usaremos para o estado inicial, pois o usuário quer "Selecione aqui" no primeiro load.
-        document.addEventListener('DOMContentLoaded', () => {
-            const categorySelect = document.getElementById('filter-category');
-            const formatSelect = document.getElementById('filter-format');
-            
-            // Tenta carregar os valores da última sessão para fins de persistência se o usuário
-            // não tiver a opção "Selecione aqui" marcada.
-            const savedCategory = localStorage.getItem('filterCategory');
-            const savedFormat = localStorage.getItem('filterFormat');
+    <!-- Cards de Métricas - LINHA 1 -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <div class="metric-icon">🎯</div>
+          <div class="metric-title">NPS - Recomendação</div>
+        </div>
+        <div class="metric-value" id="metric-nps-rec">—</div>
+        <div class="metric-subtitle">Net Promoter Score</div>
+        <div class="metric-details">
+          <div class="metric-detail">
+            <span>😞 Detratores:</span>
+            <strong id="nps-pct-detr">—</strong>
+          </div>
+          <div class="metric-detail">
+            <span>😀 Promotores:</span>
+            <strong id="nps-pct-prom">—</strong>
+          </div>
+        </div>
+      </div>
 
-            if (savedCategory && categorySelect.querySelector(`option[value="${savedCategory}"]`)) {
-                 // Apenas carrega o valor se não for a opção vazia de "Selecione aqui"
-                 if (savedCategory !== "") {
-                    categorySelect.value = savedCategory;
-                 }
-            }
-            if (savedFormat && formatSelect.querySelector(`option[value="${savedFormat}"]`)) {
-                 if (savedFormat !== "") {
-                    formatSelect.value = savedFormat;
-                 }
-            }
+      <div class="metric-card orange">
+        <div class="metric-header">
+          <div class="metric-icon">⭐</div>
+          <div class="metric-title">Autoavaliação</div>
+        </div>
+        <div class="metric-value" id="metric-nps-auto">—</div>
+        <div class="metric-subtitle">Escala de 1 a 5</div>
+      </div>
+    </div>
 
-            // Adiciona listener para salvar a seleção
-            categorySelect.addEventListener('change', () => {
-                localStorage.setItem('filterCategory', categorySelect.value);
-            });
-            formatSelect.addEventListener('change', () => {
-                localStorage.setItem('filterFormat', formatSelect.value);
-            });
-        });
-    </script>
+    <!-- Cards de Métricas - LINHA 2 -->
+    <div class="metrics-grid">
+      <div class="metric-card blue">
+        <div class="metric-header">
+          <div class="metric-icon">👨‍🏫</div>
+          <div class="metric-title">Professor 1</div>
+        </div>
+        <div class="metric-value" id="metric-nps-prof1">—</div>
+        <div class="metric-subtitle">Avaliação do professor</div>
+      </div>
 
+      <div class="metric-card green">
+        <div class="metric-header">
+          <div class="metric-icon">👩‍🏫</div>
+          <div class="metric-title">Professor 2</div>
+        </div>
+        <div class="metric-value" id="metric-nps-prof2">—</div>
+        <div class="metric-subtitle">Avaliação do professor</div>
+      </div>
+    </div>
+
+    <!-- Tabelas -->
+    <div class="table-section">
+      <!-- Check-in -->
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-icon">📥</div>
+          <h3 class="table-title">Check-in (CI %)</h3>
+        </div>
+        <div class="table-wrap" id="table-checkin">
+          <div style="padding: 1rem; text-align: center; color: #888;">Carregando dados...</div>
+        </div>
+      </div>
+
+      <!-- Check-out -->
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-icon">📤</div>
+          <h3 class="table-title">Check-out (CO %)</h3>
+        </div>
+        <div class="table-wrap" id="table-checkout">
+          <div style="padding: 1rem; text-align: center; color: #888;">Aguardando dados...</div>
+        </div>
+      </div>
+
+      <!-- Resultado -->
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-icon">📊</div>
+          <h3 class="table-title">Resultado Final (CO % − CI %)</h3>
+        </div>
+        <div class="table-wrap" id="table-result">
+          <div style="padding: 1rem; text-align: center; color: #888;">Calculando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Summary -->
+    <div class="ai-card">
+      <div class="ai-header">
+        <span class="ai-badge">AI Powered</span>
+        <h4 class="ai-title">Resumo Inteligente dos Resultados</h4>
+      </div>
+      <div class="ai-content" id="ai-summary">
+        Clique em "Gerar Insights IA" para obter uma análise detalhada dos dados da turma.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>💜 Dados atualizados em tempo real • Dashboard IE</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
