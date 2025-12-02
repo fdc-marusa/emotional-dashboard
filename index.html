@@ -1,99 +1,115 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard de Inteligência Emocional</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Dashboard Emocional</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-  <header class="topbar">
-    <h1>Dashboard de Inteligência Emocional</h1>
-    <p class="subtitle">Check-in, Check-out e Avaliação — dados em tempo real</p>
-  </header>
 
-  <main class="container">
-    <section class="controls">
-      <div class="filter">
-        <label>Turma</label>
-        <select id="sel-turma"><option>Todos</option></select>
-      </div>
-      <div class="filter">
-        <label>Eixo</label>
-        <select id="sel-eixo"><option>Todos</option></select>
-      </div>
-      <div class="filter">
-        <label>Mês/Ano</label>
-        <select id="sel-month"><option>Todos</option></select>
-      </div>
-      <div class="actions">
-        <button id="btn-refresh">Atualizar agora</button>
-        <button id="btn-insights">Gerar Insights IA</button>
-        <span id="last-update" class="last-update"></span>
-      </div>
-    </section>
+<header>
+  <h1>Dashboard Emocional</h1>
+</header>
 
-    <!-- TOP NPS CARDS -->
-    <section class="grid-metrics" id="nps-grid">
-      <div class="card nps-card">
-        <h3>Recomendação (NPS)</h3>
-        <div class="metric" id="metric-nps-rec">—</div>
-        <div class="help">NPS = %Promotores − %Detratores</div>
-        <div class="help small" id="nps-breakdown">
-          %Detratores: <span id="nps-pct-detr">—</span> &nbsp; | &nbsp; %Promotores: <span id="nps-pct-prom">—</span>
-        </div>
-      </div>
+<main>
 
-      <div class="card nps-card">
-        <h3>Autoavaliação (1–5)</h3>
-        <div class="metric" id="metric-nps-auto">—</div>
-        <div class="help">Média da autoavaliação</div>
-      </div>
+  <!-- ================================ -->
+  <!--  NPS + Autoavaliação + Professores -->
+  <!-- ================================ -->
+  <section class="grid-metrics" id="nps-grid">
 
-      <div class="card nps-card">
-        <h3>Professor 1 (1–5)</h3>
-        <div class="metric" id="metric-nps-prof1">—</div>
-        <div class="help">Média do professor 1</div>
+    <div class="card nps-card">
+      <h3>Recomendação (NPS)</h3>
+      <div class="metric" id="metric-nps-rec">—</div>
+      <div class="help">NPS = %Promotores − %Detratores</div>
+      <div class="help small" id="nps-breakdown">
+        %Detratores: <span id="nps-pct-detr">—</span> | %Promotores: <span id="nps-pct-prom">—</span>
       </div>
+    </div>
 
-      <div class="card nps-card">
-        <h3>Professor 2 (1–5)</h3>
-        <div class="metric" id="metric-nps-prof2">—</div>
-        <div class="help">Média do professor 2</div>
-      </div>
-    </section>
+    <div class="card nps-card">
+      <h3>Autoavaliação (1–5)</h3>
+      <div class="metric" id="metric-nps-auto">—</div>
+      <div class="help">Média da autoavaliação</div>
+    </div>
 
-    <!-- TABELAS -->
-    <section id="tables" class="tables-section">
-      <div class="table-card" id="table-checkin-card">
-        <h3>CHECK-IN</h3>
-        <div class="table-wrap" id="table-checkin"></div>
+    <div class="card nps-card">
+      <h3>Professor 1 (1–5)</h3>
+      <div class="metric" id="metric-nps-prof1">—</div>
+      <div class="help">Média do professor 1</div>
+    </div>
+
+    <div class="card nps-card">
+      <h3>Professor 2 (1–5)</h3>
+      <div class="metric" id="metric-nps-prof2">—</div>
+      <div class="help">Média do professor 2</div>
+    </div>
+
+  </section>
+
+  <!-- ======================================== -->
+  <!-- Filtros -->
+  <!-- ======================================== -->
+  <section class="filters">
+    <h2>Filtros</h2>
+    <div class="filter-grid">
+      <div>
+        <label>Turma:</label>
+        <select id="filter-turma"></select>
       </div>
 
-      <div class="table-card" id="table-checkout-card">
-        <h3>CHECK-OUT</h3>
-        <div class="table-wrap" id="table-checkout"></div>
+      <div>
+        <label>Eixo:</label>
+        <select id="filter-eixo"></select>
       </div>
 
-      <div class="table-card" id="table-result-card">
-        <h3>RESULTADO FINAL (CO % − CI %)</h3>
-        <div class="table-wrap" id="table-result"></div>
+      <div>
+        <label>Mês (mm/aaaa):</label>
+        <select id="filter-month"></select>
       </div>
-    </section>
 
-    <!-- RESUMO IA -->
-    <section class="ai-section">
-      <div class="table-card wide">
-        <h4>Resumo dos resultados</h4>
-        <div id="ai-summary" class="ai-box">Clique em "Gerar Insights IA" para obter o resumo.</div>
-      </div>
-    </section>
+      <button id="btn-filtrar">Aplicar filtros</button>
+    </div>
+  </section>
 
-    <footer class="footer">
-      <small>Dados fornecidos por Apps Script • Atualização automática</small>
-    </footer>
-  </main>
+  <!-- ======================================== -->
+  <!-- Gráficos por pergunta -->
+  <!-- ======================================== -->
+  <section class="charts-section">
+    <h2>Check-in e Check-out — Gráficos por pergunta</h2>
 
-  <script src="script.js"></script>
+    <div id="charts-container">
+      <!-- Inseridos dinamicamente pelo script -->
+    </div>
+  </section>
+
+  <!-- ======================================== -->
+  <!-- Quadros de comparação checkin/checkout -->
+  <!-- ======================================== -->
+  <section class="comparison-section">
+    <h2>Comparação — Quantidade e Percentual</h2>
+    <div id="comparison-container">
+      <!-- Renderizado pelo script -->
+    </div>
+  </section>
+
+  <!-- ======================================== -->
+  <!-- INSIGHTS DA IA -->
+  <!-- ======================================== -->
+  <section class="insights-section">
+    <h2>Resumo dos resultados</h2>
+    <div id="insights-container" class="insights-box">
+      Carregando análise da IA...
+    </div>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+
 </body>
 </html>
