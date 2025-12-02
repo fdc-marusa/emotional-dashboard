@@ -1,10 +1,11 @@
 // ===================== CONFIG =====================
-const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec"; // <<-- substitua
+const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbyosVBXuXDmpsMzqHNUcQ-Kjre15_lft_I5mswHVbyjSNHDx0LEkSgQejUYok8_WTM5/exec"; // <<-- substitua pela sua URL /exec
 const AUTO_REFRESH_SECONDS = 30; // polling interval
 // ===================================================
 
 let state = { raw: null, processed: null };
 
+// --------------- Fetch / Helpers ---------------
 async function fetchExec(ignoreCache = false) {
   try {
     const params = new URLSearchParams();
@@ -37,7 +38,10 @@ async function fetchInsights(filters = {}) {
   }
 }
 
-// Short labels -> perguntas completas (map)
+function q(id){ return document.getElementById(id); }
+function setText(id, txt){ const el = q(id); if (el) el.textContent = txt; }
+
+// ---------------- Questions & Categories ----------------
 const QUESTIONS = {
   "Autocontrole": "Hoje você consegue reconhecer situações que te desestabilizam e exigem maior autocontrole?",
   "Nomear emoções": "Hoje é “de boa” nomear, com clareza, as emoções que você está sentindo?",
@@ -45,7 +49,6 @@ const QUESTIONS = {
   "Relacionamento": "Hoje, como é o seu relacionamento com as pessoas e sua capacidade de trabalhar em equipe?"
 };
 
-// mapping emoji categories order
 const CATEGORIES = [
   { key: "Ruim", emoji: "😞" },
   { key: "Regular", emoji: "😬" },
@@ -53,10 +56,7 @@ const CATEGORIES = [
   { key: "Ótimo", emoji: "😀" }
 ];
 
-// helpers DOM
-function q(id){ return document.getElementById(id); }
-function setText(id, txt){ const el = q(id); if (el) el.textContent = txt; }
-
+// ---------------- Filters ----------------
 function populateFilters(data) {
   const checkin = data.raw.checkin || [];
   const checkout = data.raw.checkout || [];
@@ -91,7 +91,7 @@ function applyFiltersToRows(rows) {
   });
 }
 
-// count & percent helpers
+// ---------------- Count / Percent helpers ----------------
 function countCategory(rows, questionFull, categoryEmoji) {
   let cnt = 0;
   (rows||[]).forEach(r => {
@@ -102,26 +102,21 @@ function countCategory(rows, questionFull, categoryEmoji) {
   return cnt;
 }
 
-function buildTableCounts(rows, title) {
-  // rows: filtered rows for the sheet (checkin or checkout)
-  // returns an object with counts & percents per short-question
+function buildTableCounts(rows) {
   const out = {};
   const totalRows = rows.length || 0;
-
   Object.keys(QUESTIONS).forEach(short => {
     const full = QUESTIONS[short];
     const counts = {};
     CATEGORIES.forEach(cat => {
       counts[cat.key] = countCategory(rows, full, cat.emoji);
     });
-    // percentages
     const perc = {};
     CATEGORIES.forEach(cat => {
       perc[cat.key] = totalRows ? (counts[cat.key] / totalRows * 100) : 0;
     });
     out[short] = { counts, perc, total: totalRows };
   });
-
   return out;
 }
 
@@ -129,16 +124,13 @@ function formatPct(v) {
   return (Math.round(v * 100) / 100).toFixed(1) + "%";
 }
 
+// ---------------- Render Tables ----------------
 function renderCountsTable(containerId, tableObj) {
-  // tableObj: result of buildTableCounts
-  // build HTML table matching excel layout
   const container = q(containerId);
   container.innerHTML = "";
-
   const table = document.createElement("table");
   table.className = "compare";
 
-  // header row
   const thead = document.createElement("thead");
   const hrow = document.createElement("tr");
   const headers = ["Pergunta",
@@ -146,11 +138,7 @@ function renderCountsTable(containerId, tableObj) {
     "Qtd Bom","% Bom",
     "Qtd Regular","% Regular",
     "Qtd Ótimo","% Ótimo"];
-  headers.forEach(h => {
-    const th = document.createElement("th");
-    th.textContent = h;
-    hrow.appendChild(th);
-  });
+  headers.forEach(h => { const th = document.createElement("th"); th.textContent = h; hrow.appendChild(th); });
   thead.appendChild(hrow);
   table.appendChild(thead);
 
@@ -159,25 +147,17 @@ function renderCountsTable(containerId, tableObj) {
     const d = tableObj[short];
     const tr = document.createElement("tr");
 
-    // Pergunta (left)
-    const tdQ = document.createElement("td");
-    tdQ.className = "table-left";
-    tdQ.textContent = short;
-    tr.appendChild(tdQ);
+    const tdQ = document.createElement("td"); tdQ.className = "table-left"; tdQ.textContent = short; tr.appendChild(tdQ);
 
-    // Qtd Ruim, % Ruim
     const tdQtdRuim = document.createElement("td"); tdQtdRuim.textContent = d.counts["Ruim"] || 0; tr.appendChild(tdQtdRuim);
     const tdPctRuim = document.createElement("td"); tdPctRuim.textContent = formatPct(d.perc["Ruim"] || 0); tr.appendChild(tdPctRuim);
 
-    // Qtd Bom, % Bom
     const tdQtdBom = document.createElement("td"); tdQtdBom.textContent = d.counts["Bom"] || 0; tr.appendChild(tdQtdBom);
     const tdPctBom = document.createElement("td"); tdPctBom.textContent = formatPct(d.perc["Bom"] || 0); tr.appendChild(tdPctBom);
 
-    // Qtd Regular, % Regular
     const tdQtdReg = document.createElement("td"); tdQtdReg.textContent = d.counts["Regular"] || 0; tr.appendChild(tdQtdReg);
     const tdPctReg = document.createElement("td"); tdPctReg.textContent = formatPct(d.perc["Regular"] || 0); tr.appendChild(tdPctReg);
 
-    // Qtd Ótimo, % Ótimo
     const tdQtdOt = document.createElement("td"); tdQtdOt.textContent = d.counts["Ótimo"] || 0; tr.appendChild(tdQtdOt);
     const tdPctOt = document.createElement("td"); tdPctOt.textContent = formatPct(d.perc["Ótimo"] || 0); tr.appendChild(tdPctOt);
 
@@ -189,14 +169,13 @@ function renderCountsTable(containerId, tableObj) {
 }
 
 function buildResultTable(checkinObj, checkoutObj) {
-  // compute CO% - CI% for each question & category
   const out = {};
   Object.keys(QUESTIONS).forEach(short => {
     out[short] = {};
     CATEGORIES.forEach(cat => {
       const ci = (checkinObj[short] && checkinObj[short].perc[cat.key]) || 0;
       const co = (checkoutObj[short] && checkoutObj[short].perc[cat.key]) || 0;
-      out[short][cat.key] = co - ci; // percentual difference
+      out[short][cat.key] = co - ci;
     });
   });
   return out;
@@ -205,19 +184,13 @@ function buildResultTable(checkinObj, checkoutObj) {
 function renderResultTable(containerId, resultObj) {
   const container = q(containerId);
   container.innerHTML = "";
-
   const table = document.createElement("table");
   table.className = "compare";
 
-  // header
   const thead = document.createElement("thead");
   const hrow = document.createElement("tr");
   const headers = ["Pergunta", "% Ruim", "% Bom", "% Regular", "% Ótimo"];
-  headers.forEach(h => {
-    const th = document.createElement("th");
-    th.textContent = h;
-    hrow.appendChild(th);
-  });
+  headers.forEach(h => { const th = document.createElement("th"); th.textContent = h; hrow.appendChild(th); });
   thead.appendChild(hrow);
   table.appendChild(thead);
 
@@ -225,17 +198,14 @@ function renderResultTable(containerId, resultObj) {
   Object.keys(resultObj).forEach(short => {
     const d = resultObj[short];
     const tr = document.createElement("tr");
-
     const tdQ = document.createElement("td"); tdQ.className="table-left"; tdQ.textContent = short; tr.appendChild(tdQ);
 
-    // order: Ruim, Bom, Regular, Ótimo (to match excel layout expectation)
     const keysOrder = ["Ruim","Bom","Regular","Ótimo"];
     keysOrder.forEach(k => {
       const val = d[k] || 0;
       const td = document.createElement("td");
       const formatted = (Math.round(val * 100) / 100).toFixed(1) + "%";
       td.textContent = formatted;
-      // color style
       if (val > 0) td.className = "result-positive";
       else if (val < 0) td.className = "result-negative";
       tr.appendChild(td);
@@ -248,51 +218,90 @@ function renderResultTable(containerId, resultObj) {
   container.appendChild(table);
 }
 
-// compute simple averages for KPI cards
-function averageOfObjectValues(obj) {
-  const vals = Object.values(obj || {}).map(o => o.perc ? (Object.values(o.perc).reduce((a,b)=>a+b,0)/4) : 0).filter(v => typeof v === "number");
-  if (!vals.length) return 0;
-  return vals.reduce((a,b)=>a+b,0)/vals.length;
+// ---------------- Evaluation keys discovery ----------------
+function findAvaliacaoKeys(sampleRows) {
+  const keys = sampleRows && sampleRows.length ? Object.keys(sampleRows[0]) : [];
+  let rec = null, auto = null, profs = [];
+  keys.forEach(k => {
+    const kn = k.toString().toLowerCase();
+    if (!rec && kn.includes("recomend")) rec = k;
+    else if (!auto && (kn.includes("auto") || kn.includes("autoavalia"))) auto = k;
+    else if (kn.includes("professor") || kn.includes("prof")) {
+      profs.push(k);
+    }
+  });
+  return { recKey: rec, autoKey: auto, profKeys: profs };
 }
 
-// MAIN render
+// ---------------- NPS / Averages ----------------
+function computeNPS(avRows, recKey) {
+  const numeric = avRows.map(r => Number(r[recKey])).filter(v => !isNaN(v));
+  if (!numeric.length) return { nps: null, prom: 0, detr: 0, total:0 };
+  const total = numeric.length;
+  const prom = numeric.filter(v => v >= 9).length;
+  const detr = numeric.filter(v => v <= 6).length;
+  const nps = Math.round((prom/total*100) - (detr/total*100));
+  return { nps, promPct: prom/total*100, detrPct: detr/total*100, total };
+}
+
+function averageNumeric(rows, key) {
+  const nums = rows.map(r => Number(r[key])).filter(v => !isNaN(v));
+  if (!nums.length) return null;
+  return nums.reduce((a,b)=>a+b,0)/nums.length;
+}
+
+// ---------------- MAIN render ----------------
 async function renderAll(ignoreCache=false) {
   const data = await fetchExec(ignoreCache);
   if (!data) return;
-  state.raw = data.raw;
-  state.processed = data.processed;
+  state.raw = data.raw || {};
+  state.processed = data.processed || {};
 
   setText("last-update", "Última: " + new Date().toLocaleString());
 
   populateFilters(data);
 
-  // filtered rows
   const checkinFiltered = applyFiltersToRows(state.raw.checkin || []);
   const checkoutFiltered = applyFiltersToRows(state.raw.checkout || []);
+  const avaliacaoFiltered = applyFiltersToRows(state.raw.avaliacao || []);
 
-  // build tables
+  // tables
   const checkinTableObj = buildTableCounts(checkinFiltered);
   const checkoutTableObj = buildTableCounts(checkoutFiltered);
-
   renderCountsTable("table-checkin", checkinTableObj);
   renderCountsTable("table-checkout", checkoutTableObj);
 
   const resultObj = buildResultTable(checkinTableObj, checkoutTableObj);
   renderResultTable("table-result", resultObj);
 
-  // metrics
-  const checkinAvgOverall = averageOfObjectValues(checkinTableObj);
-  const checkoutAvgOverall = averageOfObjectValues(checkoutTableObj);
-  setText("metric-checkin", checkinAvgOverall ? checkinAvgOverall.toFixed(2) : "—");
-  setText("metric-checkout", checkoutAvgOverall ? checkoutAvgOverall.toFixed(2) : "—");
+  // metrics NPS & averages - discover keys
+  const sample = state.raw.avaliacao && state.raw.avaliacao.length ? state.raw.avaliacao : [];
+  const keys = findAvaliacaoKeys(sample);
+  // compute NPS
+  if (keys.recKey) {
+    const npsObj = computeNPS(avaliacaoFiltered, keys.recKey);
+    setText("metric-nps-rec", (npsObj.nps !== null) ? npsObj.nps + "" : "—");
+    setText("nps-pct-prom", npsObj.promPct ? npsObj.promPct.toFixed(1) + "%" : "—");
+    setText("nps-pct-detr", npsObj.detrPct ? npsObj.detrPct.toFixed(1) + "%" : "—");
+  } else {
+    setText("metric-nps-rec", "—");
+    setText("nps-pct-prom", "—");
+    setText("nps-pct-detr", "—");
+  }
 
-  // avaliacao recommendation avg (if present)
-  const recKey = "Em uma escala de 0 a 10 o quanto você recomendaria o eixo de Inteligência Emocional a um colega?";
-  const recAvg = (state.processed.avaliacao && state.processed.avaliacao.perQuestion && state.processed.avaliacao.perQuestion[recKey] && state.processed.avaliacao.perQuestion[recKey].avg) || 0;
-  setText("metric-avaliacao", recAvg ? Number(recAvg).toFixed(2) : "—");
+  // auto / prof averages
+  const autoAvg = keys.autoKey ? averageNumeric(avaliacaoFiltered, keys.autoKey) : null;
+  setText("metric-nps-auto", autoAvg !== null ? Number(autoAvg).toFixed(2) : "—");
+
+  const prof1Key = keys.profKeys && keys.profKeys.length ? keys.profKeys[0] : null;
+  const prof2Key = keys.profKeys && keys.profKeys.length > 1 ? keys.profKeys[1] : null;
+  const prof1Avg = prof1Key ? averageNumeric(avaliacaoFiltered, prof1Key) : null;
+  const prof2Avg = prof2Key ? averageNumeric(avaliacaoFiltered, prof2Key) : null;
+  setText("metric-nps-prof1", prof1Avg !== null ? Number(prof1Avg).toFixed(2) : "—");
+  setText("metric-nps-prof2", prof2Avg !== null ? Number(prof2Avg).toFixed(2) : "—");
 }
 
-// EVENTS
+// ---------------- EVENTS ----------------
 q("btn-refresh").addEventListener("click", () => renderAll(true));
 q("btn-insights").addEventListener("click", async () => {
   const filters = {
@@ -302,8 +311,14 @@ q("btn-insights").addEventListener("click", async () => {
   };
   const resp = await fetchInsights(filters);
   if (!resp) return;
-  const aiText = (resp.ai && resp.ai.text) ? resp.ai.text : JSON.stringify(resp.ai || resp, null, 2);
-  q("ai-summary").textContent = aiText;
+  // Expect resp.ai.text to be a multi-section short summary
+  const aiTextRaw = (resp.ai && resp.ai.text) ? resp.ai.text : null;
+  if (aiTextRaw) {
+    // ensure header sections in correct order; if AI returned full text, use as-is
+    q("ai-summary").textContent = aiTextRaw;
+  } else {
+    q("ai-summary").textContent = JSON.stringify(resp.ai || resp, null, 2);
+  }
 });
 
 // initial render + polling
