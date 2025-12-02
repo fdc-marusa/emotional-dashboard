@@ -16,7 +16,7 @@ async function fetchExec(ignoreCache = false) {
     return await res.json();
   } catch (err) {
     console.error("fetchExec error:", err);
-    alert("Erro ao buscar dados: " + err.message);
+    // Usar alert ou UI mais bonita se desejar
     return null;
   }
 }
@@ -33,7 +33,6 @@ async function fetchInsights(filters = {}) {
     return await res.json();
   } catch (err) {
     console.error("fetchInsights error:", err);
-    alert("Erro ao gerar insights: " + err.message);
     return null;
   }
 }
@@ -70,18 +69,9 @@ function populateFilters(data) {
   const selEixo  = q("sel-eixo");
   const selMonth = q("sel-month");
 
-  // if select doesn't exist (older html) try other ids
-  if (!selTurma && q("filter-turma")) {
-    // older naming; populate both
-    fillSelect(q("filter-turma"), turmas);
-    fillSelect(q("filter-eixo"), eixos);
-    fillSelect(q("filter-month"), months);
-    return;
-  }
-
   [selTurma, selEixo, selMonth].forEach(el => {
     if (!el) return;
-    // keep first "Todos" option; if not present create it
+    // keep first "Todos" option
     if (el.options.length === 0) el.add(new Option("Todos", "Todos"));
     while(el.options.length>1) el.remove(1);
   });
@@ -89,29 +79,12 @@ function populateFilters(data) {
   turmas.forEach(t => { if(selTurma) selTurma.add(new Option(t,t)); });
   eixos.forEach(e => { if(selEixo) selEixo.add(new Option(e,e)); });
   months.forEach(m => { if(selMonth) selMonth.add(new Option(m,m)); });
-
-  function fillSelect(selectEl, values) {
-    selectEl.innerHTML = '';
-    const first = document.createElement("option");
-    first.value = "Todos";
-    first.textContent = "Todos";
-    selectEl.appendChild(first);
-    values.forEach(v => {
-      if (v) {
-        const op = document.createElement("option");
-        op.value = v;
-        op.textContent = v;
-        selectEl.appendChild(op);
-      }
-    });
-  }
 }
 
 function applyFiltersToRows(rows) {
-  // Accept either "Todos" or "" (empty) as all
-  const turmaEl = q("sel-turma") || q("filter-turma");
-  const eixoEl  = q("sel-eixo") || q("filter-eixo");
-  const monthEl = q("sel-month")  || q("filter-month");
+  const turmaEl = q("sel-turma");
+  const eixoEl  = q("sel-eixo");
+  const monthEl = q("sel-month");
 
   const turma = turmaEl ? turmaEl.value : "Todos";
   const eixo  = eixoEl  ? eixoEl.value  : "Todos";
@@ -162,9 +135,10 @@ function formatPct(v) {
 function renderCountsTable(containerId, tableObj) {
   const container = q(containerId);
   if (!container) return;
+  
+  // Limpa o conteúdo (o CSS novo já estiliza qualquer <table> dentro do wrap)
   container.innerHTML = "";
   const table = document.createElement("table");
-  table.className = "compare";
 
   const thead = document.createElement("thead");
   const hrow = document.createElement("tr");
@@ -182,7 +156,10 @@ function renderCountsTable(containerId, tableObj) {
     const d = tableObj[short];
     const tr = document.createElement("tr");
 
-    const tdQ = document.createElement("td"); tdQ.className = "table-left"; tdQ.textContent = short; tr.appendChild(tdQ);
+    // Primeira coluna alinhada a esquerda (já feito pelo CSS no first-child)
+    const tdQ = document.createElement("td"); 
+    tdQ.textContent = short; 
+    tr.appendChild(tdQ);
 
     const tdQtdRuim = document.createElement("td"); tdQtdRuim.textContent = d.counts["Ruim"] || 0; tr.appendChild(tdQtdRuim);
     const tdPctRuim = document.createElement("td"); tdPctRuim.textContent = formatPct(d.perc["Ruim"] || 0); tr.appendChild(tdPctRuim);
@@ -221,7 +198,6 @@ function renderResultTable(containerId, resultObj) {
   if (!container) return;
   container.innerHTML = "";
   const table = document.createElement("table");
-  table.className = "compare";
 
   const thead = document.createElement("thead");
   const hrow = document.createElement("tr");
@@ -234,16 +210,24 @@ function renderResultTable(containerId, resultObj) {
   Object.keys(resultObj).forEach(short => {
     const d = resultObj[short];
     const tr = document.createElement("tr");
-    const tdQ = document.createElement("td"); tdQ.className="table-left"; tdQ.textContent = short; tr.appendChild(tdQ);
+    const tdQ = document.createElement("td"); 
+    tdQ.textContent = short; 
+    tr.appendChild(tdQ);
 
     const keysOrder = ["Ruim","Bom","Regular","Ótimo"];
     keysOrder.forEach(k => {
       const val = d[k] || 0;
       const td = document.createElement("td");
-      const formatted = (Math.round(val * 100) / 100).toFixed(1) + "%";
+      
+      // Formata com sinal de + se positivo
+      const sign = val > 0 ? "+" : "";
+      const formatted = sign + (Math.round(val * 100) / 100).toFixed(1) + "%";
       td.textContent = formatted;
-      if (val > 0) td.className = "result-positive";
-      else if (val < 0) td.className = "result-negative";
+      
+      // Classes atualizadas para o novo CSS
+      if (val > 0) td.className = "positive";
+      else if (val < 0) td.className = "negative";
+      
       tr.appendChild(td);
     });
 
@@ -266,7 +250,6 @@ function findAvaliacaoKeys(sampleRows) {
       profs.push(k);
     }
   });
-  // fallback: try specific phrasing if not found
   if (!rec) rec = keys.find(k => k.toLowerCase().includes("quanto você recomendaria"));
   return { recKey: rec, autoKey: auto, profKeys: profs };
 }
@@ -292,18 +275,16 @@ function averageNumeric(rows, key) {
 
 // ---------------- INSIGHTS RENDERING ----------------
 function renderInsightsText(aiResponse) {
-  const box = q("insights-container") || q("ai-summary") || null;
+  const box = q("ai-summary"); // ID atualizado para o novo layout
   if (!box) return;
   if (!aiResponse || !aiResponse.text) {
     box.textContent = "Nenhum insight disponível.";
     return;
   }
-  // Keep simple formatting: double line breaks -> <br><br>, single line -> <br>
   const safe = escapeHtml(aiResponse.text);
   box.innerHTML = safe.replace(/\r\n/g, "\n").replace(/\n\n/g, "<br><br>").replace(/\n/g, "<br>");
 }
 
-// small helper to avoid HTML injection from AI (keeps emojis etc.)
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -313,12 +294,18 @@ function escapeHtml(str) {
 
 // ---------------- MAIN render ----------------
 async function renderAll(ignoreCache=false) {
+  const lastUpdateEl = q("last-update");
+  if(lastUpdateEl) lastUpdateEl.textContent = "🔄 Atualizando...";
+
   const data = await fetchExec(ignoreCache);
   if (!data) return;
   state.raw = data.raw || {};
   state.processed = data.processed || {};
 
-  setText("last-update", "Última: " + new Date().toLocaleString());
+  if(lastUpdateEl) {
+    const now = new Date();
+    lastUpdateEl.textContent = "🕐 " + now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+  }
 
   populateFilters(data);
 
@@ -326,7 +313,7 @@ async function renderAll(ignoreCache=false) {
   const checkoutFiltered = applyFiltersToRows(state.raw.checkout || []);
   const avaliacaoFiltered = applyFiltersToRows(state.raw.avaliacao || []);
 
-  // tables
+  // Tables
   const checkinTableObj = buildTableCounts(checkinFiltered);
   const checkoutTableObj = buildTableCounts(checkoutFiltered);
   renderCountsTable("table-checkin", checkinTableObj);
@@ -335,7 +322,7 @@ async function renderAll(ignoreCache=false) {
   const resultObj = buildResultTable(checkinTableObj, checkoutTableObj);
   renderResultTable("table-result", resultObj);
 
-  // calculate NPS and averages locally (more robust)
+  // NPS & Averages
   const sample = state.raw.avaliacao && state.raw.avaliacao.length ? state.raw.avaliacao : [];
   const keys = findAvaliacaoKeys(sample);
 
@@ -354,57 +341,71 @@ async function renderAll(ignoreCache=false) {
   setText("metric-nps-prof1", prof1Avg !== null ? Number(prof1Avg).toFixed(2) : "—");
   setText("metric-nps-prof2", prof2Avg !== null ? Number(prof2Avg).toFixed(2) : "—");
 
-  // Also fetch AI insights but don't block UI
-  // Build filter params
-  const turmaEl = q("sel-turma") || q("filter-turma");
-  const eixoEl  = q("sel-eixo") || q("filter-eixo");
-  const monthEl = q("sel-month") || q("filter-month");
+  // AI Summary (Initial load or filter change logic)
+  // Nota: Para não gastar cota de AI em todo refresh, mantemos o fallback ou 
+  // buscamos apenas se o usuário pedir. Aqui vou manter o comportamento original
+  // de buscar mas tratar o fallback se não vier nada.
+  
+  // Se quiser carregar AI automaticamente, descomente abaixo.
+  // Caso contrário, o botão "Gerar Insights" fará isso.
+  /*
   const filters = {
-    turma: turmaEl ? (turmaEl.value !== "Todos" ? turmaEl.value : null) : null,
-    eixo:  eixoEl  ? (eixoEl.value  !== "Todos" ? eixoEl.value  : null) : null,
-    month: monthEl ? (monthEl.value !== "Todos" ? monthEl.value : null) : null
+    turma: q("sel-turma").value,
+    eixo:  q("sel-eixo").value,
+    month: q("sel-month").value
   };
-
-  // fetch AI summary (non-blocking)
   fetchInsights(filters).then(insResp => {
-    if (insResp && insResp.ai) {
-      // if the AI part is nested or different, handle gracefully
-      const aiPart = insResp.ai.text ? insResp.ai : (insResp.ai || {});
-      renderInsightsText(aiPart);
-    } else {
-      // fallback: set a simple summary using local calculations
-      const fallbackText = generateFallbackInsightsText(npsObj, autoAvg, prof1Avg, prof2Avg, resultObj);
-      renderInsightsText({ text: fallbackText });
-    }
-  }).catch(err => {
-    console.warn("AI insights fetch failed:", err);
-    const fallbackText = generateFallbackInsightsText(npsObj, autoAvg, prof1Avg, prof2Avg, resultObj);
-    renderInsightsText({ text: fallbackText });
+      // ... lógica de fallback
   });
+  */
+  
+  // Gera um fallback local imediato
+  const fallbackText = generateFallbackInsightsText(npsObj, autoAvg, prof1Avg, prof2Avg, resultObj);
+  // Só sobrescreve se estiver vazio ou placeholder
+  const aiBox = q("ai-summary");
+  if(aiBox && (aiBox.textContent.includes("Clique em") || aiBox.textContent.includes("Nenhum insight"))) {
+      // Não sobrescreve se o usuário já tiver gerado um insight real
+      // Mas para manter simples, vamos deixar o botão "Gerar Insights" ser a ação principal
+  }
 }
 
 // ---------------- EVENTS ----------------
-q("btn-refresh") && q("btn-refresh").addEventListener("click", () => renderAll(true));
-q("btn-insights") && q("btn-insights").addEventListener("click", async () => {
-  // manual request to AI and show formatted result
-  const turmaEl = q("sel-turma") || q("filter-turma");
-  const eixoEl  = q("sel-eixo") || q("filter-eixo");
-  const monthEl = q("sel-month") || q("filter-month");
+const btnRefresh = q("btn-refresh");
+if(btnRefresh) btnRefresh.addEventListener("click", () => renderAll(true));
+
+const btnInsights = q("btn-insights");
+if(btnInsights) btnInsights.addEventListener("click", async () => {
+  const box = q("ai-summary");
+  if(box) box.innerHTML = "<em>Gerando insights com inteligência artificial... aguarde...</em>";
+
   const filters = {
-    turma: turmaEl ? (turmaEl.value !== "Todos" ? turmaEl.value : null) : null,
-    eixo:  eixoEl  ? (eixoEl.value  !== "Todos" ? eixoEl.value  : null) : null,
-    month: monthEl ? (monthEl.value !== "Todos" ? monthEl.value : null) : null
+    turma: q("sel-turma").value !== "Todos" ? q("sel-turma").value : null,
+    eixo:  q("sel-eixo").value  !== "Todos" ? q("sel-eixo").value  : null,
+    month: q("sel-month").value !== "Todos" ? q("sel-month").value : null
   };
 
   const resp = await fetchInsights(filters);
-  if (!resp) return;
+  if (!resp) {
+      if(box) box.textContent = "Erro ao buscar insights.";
+      return;
+  }
+  
   if (resp.ai && resp.ai.text) {
     renderInsightsText(resp.ai);
   } else {
-    // fallback
-    renderInsightsText({ text: JSON.stringify(resp.ai || resp, null, 2) });
+    // Fallback caso a API retorne algo diferente
+    renderInsightsText({ text: "Não foi possível gerar um resumo detalhado no momento." });
   }
 });
+
+// Selects events (auto refresh on filter change?)
+// Se quiser atualizar ao mudar o filtro, descomente:
+/*
+["sel-turma", "sel-eixo", "sel-month"].forEach(id => {
+    const el = q(id);
+    if(el) el.addEventListener("change", () => renderAll(false));
+});
+*/
 
 // initial render + polling
 renderAll(true);
@@ -412,46 +413,26 @@ setInterval(() => renderAll(true), AUTO_REFRESH_SECONDS * 1000);
 
 // ----------------- Helpers: fallback insight generator -------------
 function generateFallbackInsightsText(npsObj, autoAvg, prof1Avg, prof2Avg, resultObj) {
-  // produce a short structured fallback text so UI never shows empty
   let lines = [];
-
-  lines.push("Recomendação (NPS)");
+  lines.push("<strong>Resumo Rápido (Dados Locais):</strong>");
+  
   if (npsObj.nps !== null) {
-    lines.push(`A turma tem NPS ${npsObj.nps}. Promotores: ${npsObj.promPct.toFixed(1)}%. Detratores: ${npsObj.detrPct.toFixed(1)}%`);
-  } else {
-    lines.push("Sem dados suficientes para calcular NPS.");
+    lines.push(`• A turma tem NPS <strong>${npsObj.nps}</strong>.`);
   }
-  lines.push(""); // blank line
+  if (autoAvg !== null) lines.push(`• Média Autoavaliação: <strong>${Number(autoAvg).toFixed(2)}</strong>`);
 
-  lines.push("Autoavaliação (1–5)");
-  lines.push(autoAvg !== null ? `Média: ${Number(autoAvg).toFixed(2)}` : "Sem dados");
-  lines.push("");
-
-  lines.push("Professor 1 (1–5)");
-  lines.push(prof1Avg !== null ? `Média: ${Number(prof1Avg).toFixed(2)}` : "Sem dados");
-  lines.push("");
-
-  lines.push("Professor 2 (1–5)");
-  lines.push(prof2Avg !== null ? `Média: ${Number(prof2Avg).toFixed(2)}` : "Sem dados");
-  lines.push("");
-
-  lines.push("Resultado final check-in e check-out");
-  // summarize resultObj quickly: find top improvements and drops
   try {
     const diffs = [];
     Object.keys(resultObj).forEach(q => {
       const obj = resultObj[q];
-      // consider "Ótimo" difference as indicator
       const val = obj["Ótimo"] || 0;
       diffs.push({ q, val });
     });
     diffs.sort((a,b)=> b.val - a.val);
     if (diffs.length) {
-      lines.push(`Maior avanço em: ${diffs[0].q} (${diffs[0].val.toFixed(1)}%)`);
+      lines.push(`• Maior avanço (Check-out vs Check-in) em: ${diffs[0].q} (${diffs[0].val > 0 ? '+' : ''}${diffs[0].val.toFixed(1)}%)`);
     }
-  } catch(e) {
-    // ignore
-  }
+  } catch(e) {}
 
-  return lines.join("\n");
+  return lines.join("<br>");
 }
